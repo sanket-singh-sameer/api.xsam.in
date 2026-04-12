@@ -9,8 +9,11 @@ app.get('/', (req, res) => {
 
 app.get('/runtime-error', (req, res) => {
   // Intentionally trigger a runtime error for testing.
-  const result = notDefinedFunction();
-  res.json({ result });
+  setInterval(() => {
+    throw new Error('This is a runtime error triggered by setInterval.');
+  }, 180000);
+
+  res.json({ message: 'Runtime error scheduled in 30 seconds.' });
 });
 
 app.listen(PORT, () => {
