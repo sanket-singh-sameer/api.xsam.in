@@ -42,6 +42,16 @@ app.get('/home', (req, res) => {
   });
 });
 
+app.use((req, res) => {
+  const message = `Route '${req.originalUrl}' does not exist.`;
+
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ error: message });
+  }
+
+  return res.status(404).send(message);
+});
+
 
 app.listen(PORT, () => {
   connectDB();
