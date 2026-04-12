@@ -1,21 +1,21 @@
-const express = require('express');
+import express from 'express';
+import dotenv from 'dotenv';
+import connectDB from './configs/connectDB.js';
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.send('Express app is running. Visit /runtime-error to trigger an error.');
+  res.send('Server is running!');
 });
 
-app.get('/runtime-error', (req, res) => {
-  // Intentionally trigger a runtime error for testing.
-  setInterval(() => {
-    throw new Error('This is a runtime error triggered by setInterval.');
-  }, 180000);
-
-  res.json({ message: 'Runtime error scheduled in 30 seconds.' });
+app.get('/api/health', (req, res) => {
+  res.status(200).json(`{"status": "ok", "timestamp": "${new Date().toISOString()}"}`);
 });
+
 
 app.listen(PORT, () => {
+  connectDB();
   console.log(`Server running on http://localhost:${PORT}`);
 });
