@@ -7,7 +7,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.send('Server is running!');
+  res.status(200).json({"message": "Welcome to the Portfolio API!"});
 });
 
 app.get('/api/health', (req, res) => {
