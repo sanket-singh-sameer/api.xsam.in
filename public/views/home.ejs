@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Portfolio' %></title>
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+	<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+	<style>
+		:root {
+			--bg: #f7f2e8;
+			--card: #fff8ee;
+			--ink: #1c1a18;
+			--soft-ink: #5a5149;
+			--accent: #0f8f7f;
+			--accent-2: #f1b410;
+			--border: #d8cab8;
+			--max-width: 1100px;
+			--shadow: 0 16px 40px rgba(20, 17, 12, 0.08);
+		}
+
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		html,
+		body {
+			min-height: 100%;
+		}
+
+		body {
+			font-family: "Space Grotesk", sans-serif;
+			background:
+				radial-gradient(circle at 10% 10%, #f9dec2 0 18%, transparent 19%),
+				radial-gradient(circle at 86% 20%, #d7efe9 0 16%, transparent 17%),
+				linear-gradient(180deg, #f8f5ee 0%, #f3eadc 100%);
+			color: var(--ink);
+			line-height: 1.6;
+		}
+
+		.container {
+			width: min(92%, var(--max-width));
+			margin: 0 auto;
+		}
+
+		.nav {
+			padding: 1.2rem 0;
+			position: sticky;
+			top: 0;
+			backdrop-filter: blur(8px);
+			background: rgba(247, 242, 232, 0.74);
+			border-bottom: 1px solid rgba(28, 26, 24, 0.08);
+			z-index: 20;
+		}
+
+		.nav-wrap {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+
+		.brand {
+			font-family: "Fraunces", serif;
+			font-size: 1.4rem;
+			letter-spacing: 0.5px;
+			color: var(--ink);
+			text-decoration: none;
+		}
+
+		.nav-links {
+			display: flex;
+			list-style: none;
+			gap: 1rem;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+		}
+
+		.nav-links a {
+			text-decoration: none;
+			color: var(--ink);
+			font-weight: 500;
+			padding: 0.4rem 0.75rem;
+			border-radius: 999px;
+			transition: background-color 0.2s ease, transform 0.2s ease;
+		}
+
+		.nav-links a:hover {
+			background: #ece1d0;
+			transform: translateY(-1px);
+		}
+
+		.hero {
+			padding: 5.5rem 0 3.5rem;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.hero-grid {
+			display: grid;
+			grid-template-columns: 1.2fr 0.8fr;
+			gap: 2rem;
+			align-items: center;
+		}
+
+		.eyebrow {
+			display: inline-block;
+			padding: 0.3rem 0.8rem;
+			background: #efe1cf;
+			border: 1px solid #dbc3a7;
+			border-radius: 999px;
+			font-size: 0.85rem;
+			font-weight: 700;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			margin-bottom: 1rem;
+		}
+
+		h1 {
+			font-family: "Fraunces", serif;
+			font-size: clamp(2rem, 5.6vw, 4.2rem);
+			line-height: 1.1;
+			margin-bottom: 1rem;
+		}
+
+		.hero p {
+			color: var(--soft-ink);
+			max-width: 58ch;
+			margin-bottom: 1.6rem;
+			font-size: 1.05rem;
+		}
+
+		.cta {
+			display: flex;
+			gap: 0.8rem;
+			flex-wrap: wrap;
+		}
+
+		.btn {
+			text-decoration: none;
+			border: 1px solid transparent;
+			border-radius: 0.7rem;
+			padding: 0.75rem 1rem;
+			font-weight: 700;
+			transition: transform 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.btn-main {
+			background: var(--accent);
+			color: #fff;
+			box-shadow: 0 8px 20px rgba(15, 143, 127, 0.25);
+		}
+
+		.btn-main:hover,
+		.btn-alt:hover {
+			transform: translateY(-2px);
+		}
+
+		.btn-alt {
+			border-color: var(--ink);
+			color: var(--ink);
+			background: transparent;
+		}
+
+		.hero-card {
+			background: var(--card);
+			border: 1px solid var(--border);
+			border-radius: 1rem;
+			padding: 1.2rem;
+			box-shadow: var(--shadow);
+			animation: float-in 0.7s ease both;
+		}
+
+		.hero-card h3 {
+			font-family: "Fraunces", serif;
+			margin-bottom: 0.4rem;
+		}
+
+		.hero-card ul {
+			list-style: none;
+			margin-top: 0.6rem;
+		}
+
+		.hero-card li {
+			padding: 0.4rem 0;
+			border-bottom: 1px dashed #d9ccbc;
+			font-size: 0.95rem;
+		}
+
+		.hero-card li:last-child {
+			border-bottom: none;
+		}
+
+		section {
+			padding: 2rem 0 3.5rem;
+		}
+
+		.section-head {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 1rem;
+			margin-bottom: 1.2rem;
+		}
+
+		h2 {
+			font-family: "Fraunces", serif;
+			font-size: clamp(1.4rem, 3vw, 2.2rem);
+		}
+
+		.projects {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1rem;
+		}
+
+		.project {
+			background: #fff;
+			border: 1px solid var(--border);
+			border-radius: 1rem;
+			padding: 1rem;
+			box-shadow: var(--shadow);
+			opacity: 0;
+			transform: translateY(10px);
+			animation: rise 0.5s ease forwards;
+		}
+
+		.project:nth-child(2) { animation-delay: 0.1s; }
+		.project:nth-child(3) { animation-delay: 0.2s; }
+		.project:nth-child(4) { animation-delay: 0.3s; }
+		.project:nth-child(5) { animation-delay: 0.4s; }
+		.project:nth-child(6) { animation-delay: 0.5s; }
+
+		.project h3 {
+			margin-bottom: 0.45rem;
+			font-size: 1.1rem;
+		}
+
+		.project p {
+			color: var(--soft-ink);
+			margin-bottom: 0.65rem;
+		}
+
+		.tag-list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.35rem;
+		}
+
+		.tag {
+			background: #f4ebdc;
+			border: 1px solid #e2d2bd;
+			border-radius: 999px;
+			padding: 0.2rem 0.6rem;
+			font-size: 0.8rem;
+			font-weight: 700;
+		}
+
+		.skills-wrap {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.6rem;
+		}
+
+		.skill {
+			padding: 0.5rem 0.8rem;
+			border-radius: 0.5rem;
+			background: #fff;
+			border: 1px solid var(--border);
+			font-weight: 500;
+		}
+
+		.contact {
+			background: linear-gradient(135deg, #fbe9c8 0%, #d8f0ea 100%);
+			border: 1px solid #d5c9b7;
+			border-radius: 1rem;
+			padding: 1.5rem;
+			box-shadow: var(--shadow);
+			margin-bottom: 2rem;
+		}
+
+		.contact a {
+			color: var(--ink);
+			font-weight: 700;
+			text-decoration: none;
+			border-bottom: 2px solid rgba(28, 26, 24, 0.35);
+		}
+
+		footer {
+			padding: 1.5rem 0 2rem;
+			color: var(--soft-ink);
+			font-size: 0.95rem;
+			text-align: center;
+		}
+
+		@keyframes rise {
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		@keyframes float-in {
+			from {
+				opacity: 0;
+				transform: translateY(12px) rotate(0.5deg);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) rotate(0deg);
+			}
+		}
+
+		@media (max-width: 900px) {
+			.hero-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.projects {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+
+		@media (max-width: 640px) {
+			.nav-wrap {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+
+			.nav-links {
+				justify-content: flex-start;
+			}
+
+			.projects {
+				grid-template-columns: 1fr;
+			}
+
+			.hero {
+				padding-top: 4.2rem;
+			}
+		}
+	</style>
+</head>
+<body>
+	<% 
+		const siteName = typeof name !== 'undefined' ? name : 'Sanket Singh Sameer';
+		const roleText = typeof role !== 'undefined' ? role : 'Full Stack Developer';
+		const aboutText = typeof about !== 'undefined'
+			? about
+			: 'I build clear, practical web experiences with strong foundations in backend engineering and modern frontend tooling.';
+		const emailText = typeof email !== 'undefined' ? email : 'hello@example.com';
+		const projectItems = (typeof projects !== 'undefined' && Array.isArray(projects)) ? projects : [
+			{ title: 'Portfolio API', description: 'Express-based API powering dynamic portfolio content and contact flows.', tech: ['Node.js', 'Express', 'MongoDB'], link: '#' },
+			{ title: 'Realtime Dashboard', description: 'Lightweight metrics dashboard with real-time updates and auth support.', tech: ['Socket.IO', 'EJS', 'Chart.js'], link: '#' },
+			{ title: 'Ecommerce Backend', description: 'Clean service-layer architecture for products, orders, and payments.', tech: ['REST', 'JWT', 'Stripe'], link: '#' }
+		];
+		const skillItems = (typeof skills !== 'undefined' && Array.isArray(skills)) ? skills : ['JavaScript', 'Node.js', 'Express', 'EJS', 'MongoDB', 'REST APIs', 'Git'];
+	%>
+
+	<nav class="nav">
+		<div class="container nav-wrap">
+			<a href="#home" class="brand"><%= siteName %></a>
+			<ul class="nav-links">
+				<li><a href="#projects">Projects</a></li>
+				<li><a href="#skills">Skills</a></li>
+				<li><a href="#contact">Contact</a></li>
+			</ul>
+		</div>
+	</nav>
+
+	<header class="hero" id="home">
+		<div class="container hero-grid">
+			<div>
+				<span class="eyebrow">Available for freelance</span>
+				<h1>Hi, I am <%= siteName %>. I craft reliable products for the web.</h1>
+				<p><strong><%= roleText %></strong> - <%= aboutText %></p>
+				<div class="cta">
+					<a href="#projects" class="btn btn-main">See my work</a>
+					<a href="#contact" class="btn btn-alt">Get in touch</a>
+				</div>
+			</div>
+
+			<aside class="hero-card" aria-label="Quick highlights">
+				<h3>Highlights</h3>
+				<p>Small team friendly. Fast iteration. Production mindset.</p>
+				<ul>
+					<li>3+ years building backend-first web apps</li>
+					<li>API design, database modeling, deployment workflows</li>
+					<li>Focus on maintainability, performance, and UX polish</li>
+				</ul>
+			</aside>
+		</div>
+	</header>
+
+	<main>
+		<section id="projects">
+			<div class="container">
+				<div class="section-head">
+					<h2>Projects</h2>
+					<p><%= projectItems.length %> selected builds</p>
+				</div>
+
+				<div class="projects">
+					<% projectItems.forEach((project) => { %>
+						<article class="project">
+							<h3><%= project.title %></h3>
+							<p><%= project.description %></p>
+							<% if (Array.isArray(project.tech) && project.tech.length) { %>
+								<div class="tag-list">
+									<% project.tech.forEach((stack) => { %>
+										<span class="tag"><%= stack %></span>
+									<% }) %>
+								</div>
+							<% } %>
+						</article>
+					<% }) %>
+				</div>
+			</div>
+		</section>
+
+		<section id="skills">
+			<div class="container">
+				<div class="section-head">
+					<h2>Skills</h2>
+					<p>Tools I use to ship quality work</p>
+				</div>
+
+				<div class="skills-wrap">
+					<% skillItems.forEach((skill) => { %>
+						<span class="skill"><%= skill %></span>
+					<% }) %>
+				</div>
+			</div>
+		</section>
+
+		<section id="contact">
+			<div class="container">
+				<div class="contact">
+					<h2>Let us build something useful.</h2>
+					<p>
+						Need a developer who can handle both clean backend logic and strong UI execution?
+						Reach me at <a href="mailto:<%= emailText %>"><%= emailText %></a>.
+					</p>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer>
+		<div class="container">
+			<p>&copy; <%= new Date().getFullYear() %> <%= siteName %>. Built with Node.js and EJS.</p>
+		</div>
+	</footer>
+</body>
+</html>
