@@ -29,6 +29,14 @@ const authSchema = new mongoose.Schema(
       enum: ['auth', 'admin'],
       default: 'auth',
     },
+    userProfile: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     refreshTokenHash: {
       type: String,
       select: false,

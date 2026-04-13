@@ -78,6 +78,24 @@ const messageSchema = new mongoose.Schema(
 				message: 'Website must be a valid http/https URL',
 			},
 		},
+		assignedTo: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
+		repliedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
+		createdBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
 		source: {
 			type: String,
 			trim: true,
@@ -211,6 +229,7 @@ messageSchema.pre('save', function syncStatusFields(next) {
 messageSchema.index({ status: 1, isRead: 1, createdAt: -1 });
 messageSchema.index({ email: 1, createdAt: -1 });
 messageSchema.index({ isFlagged: 1, priority: 1, createdAt: -1 });
+messageSchema.index({ assignedTo: 1, status: 1, createdAt: -1 });
 
 const Message = mongoose.model('Message', messageSchema);
 

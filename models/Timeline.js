@@ -100,6 +100,22 @@ const timelineSchema = new mongoose.Schema(
 				message: 'Related projects must not contain duplicate references',
 			},
 		},
+		relatedSkills: {
+			type: [
+				{
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'Skill',
+				},
+			],
+			default: [],
+			validate: {
+				validator: (items) => {
+					const ids = items.map((item) => item.toString());
+					return new Set(ids).size === ids.length;
+				},
+				message: 'Related skills must not contain duplicate references',
+			},
+		},
 		relatedTechnologies: {
 			type: [
 				{
@@ -115,6 +131,18 @@ const timelineSchema = new mongoose.Schema(
 				},
 				message: 'Related technologies must not contain duplicate references',
 			},
+		},
+		createdBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
+		updatedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
 		},
 		credentialUrl: {
 			type: String,
@@ -195,6 +223,7 @@ timelineSchema.path('endDate').validate(function validateEndDate(value) {
 
 timelineSchema.index({ isVisible: 1, type: 1, startDate: -1, sortOrder: 1 });
 timelineSchema.index({ isVisible: 1, isFeatured: 1, sortOrder: 1, createdAt: -1 });
+timelineSchema.index({ createdBy: 1, isVisible: 1, startDate: -1, sortOrder: 1 });
 
 const Timeline = mongoose.model('Timeline', timelineSchema);
 

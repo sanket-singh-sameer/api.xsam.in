@@ -73,6 +73,18 @@ const projectSchema = new mongoose.Schema(
                 message: 'Technologies must not contain duplicate references',
             },
         },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+            index: true,
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+            index: true,
+        },
         isDeployed: {
             type: Boolean,
             default: false,
@@ -110,6 +122,7 @@ projectSchema.pre('validate', function normalizeProjectFields(next) {
 });
 
 projectSchema.index({ isVisible: 1, isDeployed: 1, createdAt: -1 });
+projectSchema.index({ createdBy: 1, isVisible: 1, createdAt: -1 });
 
 const Project = mongoose.model('Project', projectSchema);
 

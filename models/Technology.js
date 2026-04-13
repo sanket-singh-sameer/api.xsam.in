@@ -47,11 +47,39 @@ const technologySchema = new mongoose.Schema(
                 message: 'Icon must be a valid http/https URL',
             },
         },
+        relatedSkills: {
+            type: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Skill',
+                },
+            ],
+            default: [],
+            validate: {
+                validator: (items) => {
+                    const ids = items.map((item) => item.toString());
+                    return new Set(ids).size === ids.length;
+                },
+                message: 'Related skills must not contain duplicate references',
+            },
+        },
         category: {
             type: String,
             trim: true,
             default: 'general',
             enum: ['frontend', 'backend', 'database', 'devops', 'tools', 'general'],
+            index: true,
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+            index: true,
+        },
+        updatedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
             index: true,
         },
         isVisible: {
@@ -99,6 +127,7 @@ technologySchema.virtual('projects', {
 });
 
 technologySchema.index({ isVisible: 1, category: 1, sortOrder: 1, name: 1 });
+technologySchema.index({ createdBy: 1, isVisible: 1, sortOrder: 1, name: 1 });
 
 const Technology = mongoose.model('Technology', technologySchema);
 

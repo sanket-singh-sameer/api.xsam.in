@@ -74,6 +74,34 @@ const skillSchema = new mongoose.Schema(
 				message: 'Icon must be a valid http/https URL',
 			},
 		},
+		relatedTechnologies: {
+			type: [
+				{
+					type: mongoose.Schema.Types.ObjectId,
+					ref: 'Technology',
+				},
+			],
+			default: [],
+			validate: {
+				validator: (items) => {
+					const ids = items.map((item) => item.toString());
+					return new Set(ids).size === ids.length;
+				},
+				message: 'Related technologies must not contain duplicate references',
+			},
+		},
+		createdBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
+		updatedBy: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+			default: null,
+			index: true,
+		},
 		isVisible: {
 			type: Boolean,
 			default: true,
@@ -122,6 +150,7 @@ skillSchema.pre('validate', function normalizeSkill(next) {
 });
 
 skillSchema.index({ isVisible: 1, isFeatured: 1, category: 1, sortOrder: 1, proficiency: -1 });
+skillSchema.index({ createdBy: 1, isVisible: 1, sortOrder: 1, proficiency: -1 });
 
 const Skill = mongoose.model('Skill', skillSchema);
 
