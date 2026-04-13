@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= pageTitle %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f0e6;
+      --card: #fff8ef;
+      --ink: #1c1a18;
+      --soft: #5d5349;
+      --accent: #0f8f7f;
+      --border: #d8cab8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 15%, #f8dcb8 0 18%, transparent 19%),
+        radial-gradient(circle at 90% 20%, #cbece5 0 16%, transparent 17%),
+        linear-gradient(180deg, #f7f3eb 0%, #f2e8da 100%);
+      padding: 1rem;
+    }
+
+    .wrap {
+      width: min(92%, 980px);
+      margin: 0 auto;
+      animation: reveal 0.6s ease;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+    }
+
+    h1 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+    }
+
+    .logout {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      padding: 0.65rem 0.9rem;
+      border-radius: 0.65rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      box-shadow: 0 14px 36px rgba(20, 17, 12, 0.1);
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .label {
+      color: var(--soft);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 0.3rem;
+    }
+
+    .value {
+      font-size: 1.02rem;
+      margin-bottom: 0.9rem;
+      word-break: break-word;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Dashboard</h1>
+      <form method="POST" action="/dashboard/logout">
+        <button class="logout" type="submit">Logout</button>
+      </form>
+    </div>
+
+    <section class="card">
+      <p class="label">Welcome</p>
+      <p class="value"><%= user.name %></p>
+      <p class="label">Email</p>
+      <p class="value"><%= user.email %></p>
+      <p class="label">Role</p>
+      <p class="value"><%= user.role %></p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <p class="label">Protected Route</p>
+        <p class="value">You can see this page only with valid auth cookies.</p>
+      </article>
+
+      <article class="card">
+        <p class="label">API Endpoint</p>
+        <p class="value">Use /api/auth/me with Bearer access token for profile data.</p>
+      </article>
+    </section>
+  </div>
+</body>
+</html>
