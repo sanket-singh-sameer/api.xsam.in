@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const userSchema = new mongoose.Schema(
+const authSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -26,8 +26,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      enum: ['auth', 'admin'],
+      default: 'auth',
     },
     refreshTokenHash: {
       type: String,
@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.pre('save', async function hashPassword() {
+authSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) {
     return;
   }
@@ -53,10 +53,10 @@ userSchema.pre('save', async function hashPassword() {
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-userSchema.methods.comparePassword = async function comparePassword(plainPassword) {
+authSchema.methods.comparePassword = async function comparePassword(plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
+const Auth = mongoose.model('Auth', authSchema);
 
-export default User;
+export default Auth;

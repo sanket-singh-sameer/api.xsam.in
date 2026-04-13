@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import User from '../models/User.js';
+import Auth from '../models/Auth.js';
 import { verifyRefreshToken } from '../utils/tokens.js';
 import {
   ACCESS_TOKEN_COOKIE,
@@ -18,14 +18,20 @@ const isStrongPassword = (password) => {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/.test(password);
 };
 
-const sanitizeUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
+const sanitizeAuth = (auth) => ({
+  id: auth._id,
+  name: auth.name,
+  email: auth.email,
+  role: auth.role,
+  createdAt: auth.createdAt,
+  updatedAt: auth.updatedAt,
 });
+
+const isFormRequest = (req) => req.is('application/x-www-form-urlencoded');
+
+const redirectWithError = (res, path, error) => {
+  return res.redirect(`${path}?error=${encodeURIComponent(error)}`);
+};
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -42,40 +48,63 @@ export const apiSignup = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/signup', 'All fields are required');
+      }
       return res.status(400).json({ error: 'Name, email, and password are required' });
     }
 
     if (!isValidEmail(email)) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/signup', 'Invalid email address');
+      }
       return res.status(400).json({ error: 'Please provide a valid email address' });
     }
 
     if (!isStrongPassword(password)) {
+      if (isFormRequest(req)) {
+        return redirectWithError(
+          res,
+          '/dashboard/signup',
+          'Password must include upper, lower, and number'
+        );
+      }
       return res.status(400).json({
         error:
           'Password must be 8-72 chars and include upper, lower, and a number',
       });
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
+    const existingAuth = await Auth.findOne({ email: email.toLowerCase().trim() });
+    if (existingAuth) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/signup', 'Email already in use');
+      }
       return res.status(409).json({ error: 'Email is already in use' });
     }
 
-    const user = await User.create({
+    const auth = await Auth.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
     });
 
-    const { accessToken } = await issueTokens(user, res);
+    const { accessToken } = await issueTokens(auth, res);
+
+    if (isFormRequest(req)) {
+      return res.redirect('/dashboard');
+    }
 
     return res.status(201).json({
       message: 'Signup successful',
-      user: sanitizeUser(user),
+      auth: sanitizeAuth(auth),
       accessToken,
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Could not sign up user' });
+    if (isFormRequest(req)) {
+      return redirectWithError(res, '/dashboard/signup', 'Could not create account');
+    }
+    return res.status(500).json({ error: 'Could not sign up auth' });
   }
 };
 
@@ -84,31 +113,47 @@ export const apiLogin = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/login', 'Email and password are required');
+      }
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
+    const auth = await Auth.findOne({ email: email.toLowerCase().trim() }).select(
       '+password +refreshTokenHash +refreshTokenExpiresAt'
     );
 
-    if (!user) {
+    if (!auth) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/login', 'Invalid credentials');
+      }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await auth.comparePassword(password);
     if (!isPasswordValid) {
+      if (isFormRequest(req)) {
+        return redirectWithError(res, '/dashboard/login', 'Invalid credentials');
+      }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
-    const { accessToken } = await issueTokens(user, res);
+    const { accessToken } = await issueTokens(auth, res);
+
+    if (isFormRequest(req)) {
+      return res.redirect('/dashboard');
+    }
 
     return res.status(200).json({
       message: 'Login successful',
-      user: sanitizeUser(user),
+      auth: sanitizeAuth(auth),
       accessToken,
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Could not log in user' });
+    if (isFormRequest(req)) {
+      return redirectWithError(res, '/dashboard/login', 'Could not log in');
+    }
+    return res.status(500).json({ error: 'Could not log in auth' });
   }
 };
 
@@ -122,30 +167,30 @@ export const apiRefresh = async (req, res) => {
     }
 
     const decoded = verifyRefreshToken(refreshToken);
-    const user = await User.findById(decoded.sub).select(
+    const auth = await Auth.findById(decoded.sub).select(
       '+refreshTokenHash +refreshTokenExpiresAt _id name email role createdAt updatedAt'
     );
 
-    if (!user || !user.refreshTokenHash) {
+    if (!auth || !auth.refreshTokenHash) {
       clearAuthCookies(res);
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
 
-    const isHashMatch = sha256(refreshToken) === user.refreshTokenHash;
+    const isHashMatch = sha256(refreshToken) === auth.refreshTokenHash;
     const isExpired =
-      !user.refreshTokenExpiresAt || user.refreshTokenExpiresAt.getTime() < Date.now();
+      !auth.refreshTokenExpiresAt || auth.refreshTokenExpiresAt.getTime() < Date.now();
 
     if (!isHashMatch || isExpired) {
       clearAuthCookies(res);
       return res.status(401).json({ error: 'Refresh token expired or invalid' });
     }
 
-    const { accessToken } = await issueTokens(user, res);
+    const { accessToken } = await issueTokens(auth, res);
 
     return res.status(200).json({
       message: 'Token refreshed',
       accessToken,
-      user: sanitizeUser(user),
+      auth: sanitizeAuth(auth),
     });
   } catch (error) {
     clearAuthCookies(res);
@@ -160,7 +205,7 @@ export const apiLogout = async (req, res) => {
     if (refreshToken) {
       try {
         const decoded = verifyRefreshToken(refreshToken);
-        await User.findByIdAndUpdate(decoded.sub, {
+        await Auth.findByIdAndUpdate(decoded.sub, {
           $set: {
             refreshTokenHash: null,
             refreshTokenExpiresAt: null,
@@ -172,15 +217,25 @@ export const apiLogout = async (req, res) => {
     }
 
     clearAuthCookies(res);
+
+    if (isFormRequest(req)) {
+      return res.redirect('/dashboard/login');
+    }
+
     return res.status(200).json({ message: 'Logout successful' });
   } catch (error) {
     clearAuthCookies(res);
+
+    if (isFormRequest(req)) {
+      return res.redirect('/dashboard/login');
+    }
+
     return res.status(200).json({ message: 'Logout successful' });
   }
 };
 
 export const apiMe = async (req, res) => {
-  return res.status(200).json({ user: req.user });
+  return res.status(200).json({ auth: req.auth });
 };
 
 export const dashboardLoginPage = (req, res) => {
@@ -200,97 +255,6 @@ export const dashboardSignupPage = (req, res) => {
 export const dashboardPage = (req, res) => {
   return res.render('dashboard/index', {
     pageTitle: 'Dashboard',
-    user: req.user,
+    auth: req.auth,
   });
-};
-
-export const dashboardSignup = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.redirect('/dashboard/signup?error=All fields are required');
-    }
-
-    if (!isValidEmail(email)) {
-      return res.redirect('/dashboard/signup?error=Invalid email address');
-    }
-
-    if (!isStrongPassword(password)) {
-      return res.redirect(
-        '/dashboard/signup?error=Password must include upper, lower, and number'
-      );
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return res.redirect('/dashboard/signup?error=Email already in use');
-    }
-
-    const user = await User.create({
-        name: name.trim(),
-        email: email.toLowerCase().trim(),
-        password,
-    });
-
-    await issueTokens(user, res);
-    return res.redirect('/dashboard');
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return res.redirect('/dashboard/signup?error=Could not create account');
-  }
-};
-
-export const dashboardLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.redirect('/dashboard/login?error=Email and password are required');
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select(
-      '+password +refreshTokenHash +refreshTokenExpiresAt'
-    );
-
-    if (!user) {
-      return res.redirect('/dashboard/login?error=Invalid credentials');
-    }
-
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
-      return res.redirect('/dashboard/login?error=Invalid credentials');
-    }
-
-    await issueTokens(user, res);
-    return res.redirect('/dashboard');
-  } catch (error) {
-    return res.redirect('/dashboard/login?error=Could not log in');
-  }
-};
-
-export const dashboardLogout = async (req, res) => {
-  try {
-    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE] || null;
-
-    if (refreshToken) {
-      try {
-        const decoded = verifyRefreshToken(refreshToken);
-        await User.findByIdAndUpdate(decoded.sub, {
-          $set: {
-            refreshTokenHash: null,
-            refreshTokenExpiresAt: null,
-          },
-        });
-      } catch (error) {
-        // Ignore invalid refresh token and continue logout.
-      }
-    }
-
-    clearAuthCookies(res);
-    return res.redirect('/dashboard/login');
-  } catch (error) {
-    clearAuthCookies(res);
-    return res.redirect('/dashboard/login');
-  }
 };
