@@ -37,7 +37,12 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
 
-app.get('/', async (req, res) => {
+app.get('/', (req, res) => {
+  res.status(200).json({ message: 'Welcome to the xsam.in API' });
+});
+
+
+app.get('/portfolio', async (req, res) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
 
   try {
