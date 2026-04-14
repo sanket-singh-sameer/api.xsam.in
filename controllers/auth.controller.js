@@ -27,12 +27,6 @@ const sanitizeUser = (user) => ({
   updatedAt: user.updatedAt,
 });
 
-const isFormRequest = (req) => req.is("application/x-www-form-urlencoded");
-
-const redirectWithError = (res, path, error) => {
-  return res.redirect(`${path}?error=${encodeURIComponent(error)}`);
-};
-
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -48,39 +42,18 @@ export const apiSignup = async (req, res) => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/signup",
-          "All fields are required",
-        );
-      }
       return res
         .status(400)
         .json({ error: "Name, email, and password are required" });
     }
 
     if (!isValidEmail(email)) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/signup",
-          "Invalid email address",
-        );
-      }
       return res
         .status(400)
         .json({ error: "Please provide a valid email address" });
     }
 
     if (!isStrongPassword(password)) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/signup",
-          "Password must include upper, lower, and number",
-        );
-      }
       return res.status(400).json({
         error:
           "Password must be 8-72 chars and include upper, lower, and a number",
@@ -91,13 +64,6 @@ export const apiSignup = async (req, res) => {
       email: email.toLowerCase().trim(),
     });
     if (existingUser) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/signup",
-          "Email already in use",
-        );
-      }
       return res.status(409).json({ error: "Email is already in use" });
     }
 
@@ -109,24 +75,12 @@ export const apiSignup = async (req, res) => {
 
     const { accessToken } = await issueTokens(user, res);
 
-    if (isFormRequest(req)) {
-      return res.redirect("/dashboard");
-    }
-
     return res.status(201).json({
       message: "Signup successful",
-      auth: sanitizeUser(user),
       user: sanitizeUser(user),
       accessToken,
     });
   } catch (error) {
-    if (isFormRequest(req)) {
-      return redirectWithError(
-        res,
-        "/dashboard/signup",
-        "Could not create account",
-      );
-    }
     return res.status(500).json({ error: "Could not sign up user" });
   }
 };
@@ -136,13 +90,6 @@ export const apiLogin = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/login",
-          "Email and password are required",
-        );
-      }
       return res.status(400).json({ error: "Email and password are required" });
     }
 
@@ -151,55 +98,26 @@ export const apiLogin = async (req, res) => {
     }).select("+password +refreshTokenHash +refreshTokenExpiresAt");
 
     if (!user) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/login",
-          "Invalid credentials",
-        );
-      }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
     if (!user.password) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/login",
-          "Invalid credentials",
-        );
-      }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      if (isFormRequest(req)) {
-        return redirectWithError(
-          res,
-          "/dashboard/login",
-          "Invalid credentials",
-        );
-      }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
     const { accessToken } = await issueTokens(user, res);
 
-    if (isFormRequest(req)) {
-      return res.redirect("/dashboard");
-    }
-
     return res.status(200).json({
       message: "Login successful",
-      auth: sanitizeUser(user),
       user: sanitizeUser(user),
       accessToken,
     });
   } catch (error) {
-    if (isFormRequest(req)) {
-      return redirectWithError(res, "/dashboard/login", "Could not log in");
-    }
     return res.status(500).json({ error: "Could not log in user" });
   }
 };
@@ -240,7 +158,6 @@ export const apiRefresh = async (req, res) => {
     return res.status(200).json({
       message: "Token refreshed",
       accessToken,
-      auth: sanitizeUser(user),
       user: sanitizeUser(user),
     });
   } catch (error) {
@@ -269,22 +186,14 @@ export const apiLogout = async (req, res) => {
 
     clearAuthCookies(res);
 
-    if (isFormRequest(req)) {
-      return res.redirect("/dashboard/login");
-    }
-
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     clearAuthCookies(res);
-
-    if (isFormRequest(req)) {
-      return res.redirect("/dashboard/login");
-    }
 
     return res.status(200).json({ message: "Logout successful" });
   }
 };
 
 export const apiMe = async (req, res) => {
-  return res.status(200).json({ auth: req.auth, user: req.auth });
+  return res.status(200).json({ user: req.auth });
 };
