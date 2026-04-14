@@ -1,0 +1,110 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1><%= skill ? 'Edit Skill' : 'Add Skill' %></h1>
+    <a class="btn secondary" href="/dashboard/skills">Back to Skills</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="status err"><%= error %></p>
+  <% } %>
+
+  <form id="skillForm">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="<%= skill?.name || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="category">Category</label>
+      <select id="category" name="category">
+        <option value="frontend" <%= skill?.category === 'frontend' ? 'selected' : '' %>>frontend</option>
+        <option value="backend" <%= skill?.category === 'backend' ? 'selected' : '' %>>backend</option>
+        <option value="database" <%= skill?.category === 'database' ? 'selected' : '' %>>database</option>
+        <option value="devops" <%= skill?.category === 'devops' ? 'selected' : '' %>>devops</option>
+        <option value="tools" <%= skill?.category === 'tools' ? 'selected' : '' %>>tools</option>
+        <option value="soft-skill" <%= skill?.category === 'soft-skill' ? 'selected' : '' %>>soft-skill</option>
+        <option value="general" <%= !skill || skill?.category === 'general' ? 'selected' : '' %>>general</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="proficiency">Proficiency</label>
+      <input id="proficiency" name="proficiency" type="number" min="1" max="100" value="<%= typeof skill?.proficiency === 'number' ? skill.proficiency : 50 %>" required />
+    </div>
+
+    <div class="field">
+      <label for="yearsOfExperience">Years Of Experience</label>
+      <input id="yearsOfExperience" name="yearsOfExperience" type="number" min="0" max="50" value="<%= typeof skill?.yearsOfExperience === 'number' ? skill.yearsOfExperience : 0 %>" />
+    </div>
+
+    <div class="field">
+      <label for="icon">Icon</label>
+      <input id="icon" name="icon" value="<%= skill?.icon || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="isVisible">Is Visible</label>
+      <select id="isVisible" name="isVisible">
+        <option value="true" <%= skill?.isVisible !== false ? 'selected' : '' %>>true</option>
+        <option value="false" <%= skill?.isVisible === false ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <button class="btn" type="submit"><%= skill ? 'Update Skill' : 'Create Skill' %></button>
+  </form>
+  <p id="status" class="status"></p>
+</section>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('skillForm');
+  const skillId = '<%= skill?._id || '' %>';
+
+  const boolValue = (value) => value === 'true';
+
+  const payloadFromForm = () => {
+    const fd = new FormData(form);
+    const body = Object.fromEntries(fd.entries());
+    body.proficiency = Number(body.proficiency);
+    body.yearsOfExperience = Number(body.yearsOfExperience || 0);
+    body.isVisible = boolValue(body.isVisible);
+    return body;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving...';
+
+    const method = skillId ? 'PUT' : 'POST';
+    const url = skillId ? `/api/skill/${skillId}` : '/api/skill';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadFromForm()),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      statusEl.className = 'status ok';
+      statusEl.textContent = skillId ? 'Skill updated successfully' : 'Skill created successfully';
+
+      if (!skillId) {
+        window.location.href = '/skills';
+      }
+    } catch (error) {
+      statusEl.className = 'status err';
+      statusEl.textContent = error.message;
+    }
+  });
+</script>
+
+<%- include('../partials/shell-end') %>

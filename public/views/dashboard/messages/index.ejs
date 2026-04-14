@@ -1,0 +1,154 @@
+<%- include('../partials/shell-start') %>
+
+<style>
+  .messages-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    background: #fffaf3;
+  }
+
+  .messages-toolbar label {
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .nice-select {
+    min-width: 170px;
+    border: 1px solid #cdb598;
+    border-radius: 0.55rem;
+    padding: 0.5rem 2rem 0.5rem 0.7rem;
+    background-color: #fff;
+    color: var(--ink);
+    font: inherit;
+    line-height: 1.2;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #8f430b 50%), linear-gradient(135deg, #8f430b 50%, transparent 50%);
+    background-position: calc(100% - 16px) calc(50% - 3px), calc(100% - 10px) calc(50% - 3px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .nice-select:hover {
+    border-color: #b99268;
+  }
+
+  .nice-select:focus {
+    outline: none;
+    border-color: #c16016;
+    box-shadow: 0 0 0 3px rgba(193, 96, 22, 0.18);
+  }
+
+  .message-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+</style>
+
+<section class="card">
+  <div class="top">
+    <h1>Messages</h1>
+    <form method="GET" action="/dashboard/messages" class="messages-toolbar">
+      <label for="status">Filter Status</label>
+      <select id="status" name="status" class="nice-select" onchange="this.form.submit()">
+        <option value="all" <%= selectedStatus === 'all' ? 'selected' : '' %>>all</option>
+        <option value="new" <%= selectedStatus === 'new' ? 'selected' : '' %>>new</option>
+        <option value="read" <%= selectedStatus === 'read' ? 'selected' : '' %>>read</option>
+        <option value="replied" <%= selectedStatus === 'replied' ? 'selected' : '' %>>replied</option>
+        <option value="archived" <%= selectedStatus === 'archived' ? 'selected' : '' %>>archived</option>
+        <option value="spam" <%= selectedStatus === 'spam' ? 'selected' : '' %>>spam</option>
+      </select>
+      <noscript><button class="btn" type="submit">Apply</button></noscript>
+    </form>
+  </div>
+
+  <% if (!messages || messages.length === 0) { %>
+    <p class="empty">No messages found for this filter.</p>
+  <% } %>
+
+  <% if (messages && messages.length > 0) { %>
+    <% messages.forEach((message) => { %>
+      <article class="item-row">
+        <h3><%= message.subject %></h3>
+        <p class="meta"><strong><%= message.name %></strong> - <%= message.email %></p>
+        <p class="meta">Status: <span id="status-label-<%= message._id %>"><%= message.status %></span></p>
+        <p class="meta"><%= message.message %></p>
+
+        <div class="message-actions">
+          <select id="status-select-<%= message._id %>" class="nice-select">
+            <option value="new" <%= message.status === 'new' ? 'selected' : '' %>>new</option>
+            <option value="read" <%= message.status === 'read' ? 'selected' : '' %>>read</option>
+            <option value="replied" <%= message.status === 'replied' ? 'selected' : '' %>>replied</option>
+            <option value="archived" <%= message.status === 'archived' ? 'selected' : '' %>>archived</option>
+            <option value="spam" <%= message.status === 'spam' ? 'selected' : '' %>>spam</option>
+            <option value="deleted">deleted</option>
+          </select>
+          <button class="btn" type="button" onclick="updateMessageStatus('<%= message._id %>')">Update Status</button>
+          <button class="btn secondary" type="button" onclick="toggleMessageStatus('<%= message._id %>', '<%= message.status %>')">Toggle New/Read</button>
+        </div>
+        <p id="status-msg-<%= message._id %>" class="status"></p>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
+
+<script>
+  const setMessageStatus = async (id, status) => {
+    const statusMsgEl = document.getElementById(`status-msg-${id}`);
+    const statusLabelEl = document.getElementById(`status-label-${id}`);
+
+    statusMsgEl.className = 'status';
+    statusMsgEl.textContent = 'Updating...';
+
+    try {
+      const response = await fetch(`/api/message/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to update status');
+      }
+
+      statusLabelEl.textContent = data.status || status;
+      statusMsgEl.className = 'status ok';
+      statusMsgEl.textContent = 'Status updated';
+
+      if ((data.status || status) === 'deleted') {
+        window.location.reload();
+      }
+    } catch (error) {
+      statusMsgEl.className = 'status err';
+      statusMsgEl.textContent = error.message;
+    }
+  };
+
+  const updateMessageStatus = (id) => {
+    const selectEl = document.getElementById(`status-select-${id}`);
+    const nextStatus = selectEl.value;
+    setMessageStatus(id, nextStatus);
+  };
+
+  const toggleMessageStatus = (id, currentStatus) => {
+    const nextStatus = currentStatus === 'new' ? 'read' : 'new';
+    const selectEl = document.getElementById(`status-select-${id}`);
+    if (selectEl) {
+      selectEl.value = nextStatus;
+    }
+    setMessageStatus(id, nextStatus);
+  };
+</script>
+
+<%- include('../partials/shell-end') %>

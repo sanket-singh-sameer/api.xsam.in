@@ -1,14 +1,14 @@
-import rateLimit from 'express-rate-limit';
-import Auth from '../models/Auth.js';
-import { verifyRefreshToken } from '../utils/tokens.js';
+import rateLimit from "express-rate-limit";
+import User from "../models/User.js";
+import { verifyRefreshToken } from "../utils/tokens.js";
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "../utils/cookies.js";
 import {
-  ACCESS_TOKEN_COOKIE,
-  REFRESH_TOKEN_COOKIE,
-} from '../utils/cookies.js';
-import { issueTokens, clearAuthCookies } from '../middlewares/auth.middleware.js';
-import { sha256 } from '../utils/crypto.js';
+  issueTokens,
+  clearAuthCookies,
+} from "../middlewares/auth.middleware.js";
+import { sha256 } from "../utils/crypto.js";
 
-const invalidCredentialsMessage = 'Invalid email or password';
+const invalidCredentialsMessage = "Invalid email or password";
 
 const isValidEmail = (email) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -18,16 +18,16 @@ const isStrongPassword = (password) => {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,72}$/.test(password);
 };
 
-const sanitizeAuth = (auth) => ({
-  id: auth._id,
-  name: auth.name,
-  email: auth.email,
-  role: auth.role,
-  createdAt: auth.createdAt,
-  updatedAt: auth.updatedAt,
+const sanitizeUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
 });
 
-const isFormRequest = (req) => req.is('application/x-www-form-urlencoded');
+const isFormRequest = (req) => req.is("application/x-www-form-urlencoded");
 
 const redirectWithError = (res, path, error) => {
   return res.redirect(`${path}?error=${encodeURIComponent(error)}`);
@@ -39,7 +39,7 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: 'Too many auth attempts. Please try again in a few minutes.',
+    error: "Too many auth attempts. Please try again in a few minutes.",
   },
 });
 
@@ -49,62 +49,85 @@ export const apiSignup = async (req, res) => {
 
     if (!name || !email || !password) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/signup', 'All fields are required');
+        return redirectWithError(
+          res,
+          "/dashboard/signup",
+          "All fields are required",
+        );
       }
-      return res.status(400).json({ error: 'Name, email, and password are required' });
+      return res
+        .status(400)
+        .json({ error: "Name, email, and password are required" });
     }
 
     if (!isValidEmail(email)) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/signup', 'Invalid email address');
+        return redirectWithError(
+          res,
+          "/dashboard/signup",
+          "Invalid email address",
+        );
       }
-      return res.status(400).json({ error: 'Please provide a valid email address' });
+      return res
+        .status(400)
+        .json({ error: "Please provide a valid email address" });
     }
 
     if (!isStrongPassword(password)) {
       if (isFormRequest(req)) {
         return redirectWithError(
           res,
-          '/dashboard/signup',
-          'Password must include upper, lower, and number'
+          "/dashboard/signup",
+          "Password must include upper, lower, and number",
         );
       }
       return res.status(400).json({
         error:
-          'Password must be 8-72 chars and include upper, lower, and a number',
+          "Password must be 8-72 chars and include upper, lower, and a number",
       });
     }
 
-    const existingAuth = await Auth.findOne({ email: email.toLowerCase().trim() });
-    if (existingAuth) {
+    const existingUser = await User.findOne({
+      email: email.toLowerCase().trim(),
+    });
+    if (existingUser) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/signup', 'Email already in use');
+        return redirectWithError(
+          res,
+          "/dashboard/signup",
+          "Email already in use",
+        );
       }
-      return res.status(409).json({ error: 'Email is already in use' });
+      return res.status(409).json({ error: "Email is already in use" });
     }
 
-    const auth = await Auth.create({
+    const user = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
     });
 
-    const { accessToken } = await issueTokens(auth, res);
+    const { accessToken } = await issueTokens(user, res);
 
     if (isFormRequest(req)) {
-      return res.redirect('/dashboard');
+      return res.redirect("/dashboard");
     }
 
     return res.status(201).json({
-      message: 'Signup successful',
-      auth: sanitizeAuth(auth),
+      message: "Signup successful",
+      auth: sanitizeUser(user),
+      user: sanitizeUser(user),
       accessToken,
     });
   } catch (error) {
     if (isFormRequest(req)) {
-      return redirectWithError(res, '/dashboard/signup', 'Could not create account');
+      return redirectWithError(
+        res,
+        "/dashboard/signup",
+        "Could not create account",
+      );
     }
-    return res.status(500).json({ error: 'Could not sign up auth' });
+    return res.status(500).json({ error: "Could not sign up user" });
   }
 };
 
@@ -114,46 +137,70 @@ export const apiLogin = async (req, res) => {
 
     if (!email || !password) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/login', 'Email and password are required');
+        return redirectWithError(
+          res,
+          "/dashboard/login",
+          "Email and password are required",
+        );
       }
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const auth = await Auth.findOne({ email: email.toLowerCase().trim() }).select(
-      '+password +refreshTokenHash +refreshTokenExpiresAt'
-    );
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+    }).select("+password +refreshTokenHash +refreshTokenExpiresAt");
 
-    if (!auth) {
+    if (!user) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/login', 'Invalid credentials');
+        return redirectWithError(
+          res,
+          "/dashboard/login",
+          "Invalid credentials",
+        );
       }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
-    const isPasswordValid = await auth.comparePassword(password);
+    if (!user.password) {
+      if (isFormRequest(req)) {
+        return redirectWithError(
+          res,
+          "/dashboard/login",
+          "Invalid credentials",
+        );
+      }
+      return res.status(401).json({ error: invalidCredentialsMessage });
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       if (isFormRequest(req)) {
-        return redirectWithError(res, '/dashboard/login', 'Invalid credentials');
+        return redirectWithError(
+          res,
+          "/dashboard/login",
+          "Invalid credentials",
+        );
       }
       return res.status(401).json({ error: invalidCredentialsMessage });
     }
 
-    const { accessToken } = await issueTokens(auth, res);
+    const { accessToken } = await issueTokens(user, res);
 
     if (isFormRequest(req)) {
-      return res.redirect('/dashboard');
+      return res.redirect("/dashboard");
     }
 
     return res.status(200).json({
-      message: 'Login successful',
-      auth: sanitizeAuth(auth),
+      message: "Login successful",
+      auth: sanitizeUser(user),
+      user: sanitizeUser(user),
       accessToken,
     });
   } catch (error) {
     if (isFormRequest(req)) {
-      return redirectWithError(res, '/dashboard/login', 'Could not log in');
+      return redirectWithError(res, "/dashboard/login", "Could not log in");
     }
-    return res.status(500).json({ error: 'Could not log in auth' });
+    return res.status(500).json({ error: "Could not log in user" });
   }
 };
 
@@ -163,38 +210,42 @@ export const apiRefresh = async (req, res) => {
       req.cookies?.[REFRESH_TOKEN_COOKIE] || req.body?.refreshToken || null;
 
     if (!refreshToken) {
-      return res.status(401).json({ error: 'Refresh token is required' });
+      return res.status(401).json({ error: "Refresh token is required" });
     }
 
     const decoded = verifyRefreshToken(refreshToken);
-    const auth = await Auth.findById(decoded.sub).select(
-      '+refreshTokenHash +refreshTokenExpiresAt _id name email role createdAt updatedAt'
+    const user = await User.findById(decoded.sub).select(
+      "+refreshTokenHash +refreshTokenExpiresAt _id name email role createdAt updatedAt",
     );
 
-    if (!auth || !auth.refreshTokenHash) {
+    if (!user || !user.refreshTokenHash) {
       clearAuthCookies(res);
-      return res.status(401).json({ error: 'Invalid refresh token' });
+      return res.status(401).json({ error: "Invalid refresh token" });
     }
 
-    const isHashMatch = sha256(refreshToken) === auth.refreshTokenHash;
+    const isHashMatch = sha256(refreshToken) === user.refreshTokenHash;
     const isExpired =
-      !auth.refreshTokenExpiresAt || auth.refreshTokenExpiresAt.getTime() < Date.now();
+      !user.refreshTokenExpiresAt ||
+      user.refreshTokenExpiresAt.getTime() < Date.now();
 
     if (!isHashMatch || isExpired) {
       clearAuthCookies(res);
-      return res.status(401).json({ error: 'Refresh token expired or invalid' });
+      return res
+        .status(401)
+        .json({ error: "Refresh token expired or invalid" });
     }
 
-    const { accessToken } = await issueTokens(auth, res);
+    const { accessToken } = await issueTokens(user, res);
 
     return res.status(200).json({
-      message: 'Token refreshed',
+      message: "Token refreshed",
       accessToken,
-      auth: sanitizeAuth(auth),
+      auth: sanitizeUser(user),
+      user: sanitizeUser(user),
     });
   } catch (error) {
     clearAuthCookies(res);
-    return res.status(401).json({ error: 'Refresh token expired or invalid' });
+    return res.status(401).json({ error: "Refresh token expired or invalid" });
   }
 };
 
@@ -205,7 +256,7 @@ export const apiLogout = async (req, res) => {
     if (refreshToken) {
       try {
         const decoded = verifyRefreshToken(refreshToken);
-        await Auth.findByIdAndUpdate(decoded.sub, {
+        await User.findByIdAndUpdate(decoded.sub, {
           $set: {
             refreshTokenHash: null,
             refreshTokenExpiresAt: null,
@@ -219,42 +270,21 @@ export const apiLogout = async (req, res) => {
     clearAuthCookies(res);
 
     if (isFormRequest(req)) {
-      return res.redirect('/dashboard/login');
+      return res.redirect("/dashboard/login");
     }
 
-    return res.status(200).json({ message: 'Logout successful' });
+    return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     clearAuthCookies(res);
 
     if (isFormRequest(req)) {
-      return res.redirect('/dashboard/login');
+      return res.redirect("/dashboard/login");
     }
 
-    return res.status(200).json({ message: 'Logout successful' });
+    return res.status(200).json({ message: "Logout successful" });
   }
 };
 
 export const apiMe = async (req, res) => {
-  return res.status(200).json({ auth: req.auth });
-};
-
-export const dashboardLoginPage = (req, res) => {
-  return res.render('dashboard/login', {
-    pageTitle: 'Dashboard Login',
-    error: req.query.error || null,
-  });
-};
-
-export const dashboardSignupPage = (req, res) => {
-  return res.render('dashboard/signup', {
-    pageTitle: 'Dashboard Signup',
-    error: req.query.error || null,
-  });
-};
-
-export const dashboardPage = (req, res) => {
-  return res.render('dashboard/index', {
-    pageTitle: 'Dashboard',
-    auth: req.auth,
-  });
+  return res.status(200).json({ auth: req.auth, user: req.auth });
 };

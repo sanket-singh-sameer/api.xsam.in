@@ -6,12 +6,12 @@ import {
   apiRefresh,
   apiSignup,
   authLimiter,
-} from '../controllers/auth.controller.js';
-import { protectApi } from '../middlewares/auth.middleware.js';
+} from '../../controllers/auth.controller.js';
+import { protectApi } from '../../middlewares/auth.middleware.js';
 
 const authApiRouter = express.Router();
 
-authApiRouter.use(authLimiter);
+// authApiRouter.use(authLimiter);
 authApiRouter.post('/signup', apiSignup);
 authApiRouter.post('/login', apiLogin);
 authApiRouter.post('/refresh', apiRefresh);

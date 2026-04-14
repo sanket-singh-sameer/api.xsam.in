@@ -1,0 +1,117 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1><%= project ? 'Edit Project' : 'Add Project' %></h1>
+    <a class="btn secondary" href="/dashboard/projects">Back to Projects</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="status err"><%= error %></p>
+  <% } %>
+
+  <form id="projectForm">
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" name="title" value="<%= project?.title || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" required><%= project?.description || '' %></textarea>
+    </div>
+
+    <div class="field">
+      <label for="image">Image</label>
+      <input id="image" name="image" value="<%= project?.image || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="githubLink">Github Link</label>
+      <input id="githubLink" name="githubLink" value="<%= project?.githubLink || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="liveLink">Live Link</label>
+      <input id="liveLink" name="liveLink" value="<%= project?.liveLink || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="technologies">Technologies (comma separated ObjectId values)</label>
+      <input id="technologies" name="technologies" value="<%= project?.technologies?.length ? project.technologies.join(',') : '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="isDeployed">Is Deployed</label>
+      <select id="isDeployed" name="isDeployed">
+        <option value="true" <%= project?.isDeployed ? 'selected' : '' %>>true</option>
+        <option value="false" <%= project && !project.isDeployed ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="isVisible">Is Visible</label>
+      <select id="isVisible" name="isVisible">
+        <option value="true" <%= project?.isVisible !== false ? 'selected' : '' %>>true</option>
+        <option value="false" <%= project?.isVisible === false ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <button class="btn" type="submit"><%= project ? 'Update Project' : 'Create Project' %></button>
+  </form>
+  <p id="status" class="status"></p>
+</section>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('projectForm');
+  const projectId = '<%= project?._id || '' %>';
+
+  const boolValue = (value) => value === 'true';
+
+  const payloadFromForm = () => {
+    const fd = new FormData(form);
+    const body = Object.fromEntries(fd.entries());
+    body.isDeployed = boolValue(body.isDeployed);
+    body.isVisible = boolValue(body.isVisible);
+    body.technologies = body.technologies
+      ? body.technologies.split(',').map((item) => item.trim()).filter(Boolean)
+      : [];
+    return body;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving...';
+
+    const method = projectId ? 'PUT' : 'POST';
+    const url = projectId ? `/api/project/${projectId}` : '/api/project';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadFromForm()),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      statusEl.className = 'status ok';
+      statusEl.textContent = projectId ? 'Project updated successfully' : 'Project created successfully';
+
+      if (!projectId) {
+        window.location.href = '/projects';
+      }
+    } catch (error) {
+      statusEl.className = 'status err';
+      statusEl.textContent = error.message;
+    }
+  });
+</script>
+
+<%- include('../partials/shell-end') %>

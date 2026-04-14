@@ -1,0 +1,32 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1>Social Links</h1>
+    <a class="btn" href="/dashboard/socials/add">Add New Social</a>
+  </div>
+
+  <% if (!socials || socials.length === 0) { %>
+    <p class="empty">No socials found.</p>
+  <% } %>
+
+  <% if (socials && socials.length > 0) { %>
+    <% socials.forEach((social) => { %>
+      <article class="item-row">
+        <h3><%= social.name || 'Unnamed Social' %></h3>
+        <p class="meta">
+          Profile URL:
+          <% if (social.profileUrl) { %>
+            <a href="<%= social.profileUrl %>" target="_blank" rel="noopener noreferrer"><%= social.profileUrl %></a>
+          <% } else { %>
+            Not set
+          <% } %>
+        </p>
+        <p class="meta">Visible: <%= social.isVisible ? 'Yes' : 'No' %></p>
+        <a class="btn" href="/dashboard/socials/<%= social._id %>">Edit</a>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
+
+<%- include('../partials/shell-end') %>

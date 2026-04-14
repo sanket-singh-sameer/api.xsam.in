@@ -1,4 +1,4 @@
-import Auth from '../models/Auth.js';
+import User from '../models/User.js';
 import {
   signAccessToken,
   signRefreshToken,
@@ -13,21 +13,21 @@ import {
 } from '../utils/cookies.js';
 import { sha256 } from '../utils/crypto.js';
 
-const buildAuthPayload = (auth) => ({
-  sub: auth._id.toString(),
-  role: auth.role,
-  email: auth.email,
-  name: auth.name,
+const buildAuthPayload = (user) => ({
+  sub: user._id.toString(),
+  role: user.role,
+  email: user.email,
+  name: user.name,
 });
 
-export const issueTokens = async (auth, res) => {
-  const payload = buildAuthPayload(auth);
+export const issueTokens = async (user, res) => {
+  const payload = buildAuthPayload(user);
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
 
-  auth.refreshTokenHash = sha256(refreshToken);
-  auth.refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await auth.save({ validateBeforeSave: false });
+  user.refreshTokenHash = sha256(refreshToken);
+  user.refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await user.save({ validateBeforeSave: false });
 
   res.cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions);
   res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, refreshCookieOptions);
@@ -43,20 +43,22 @@ export const clearAuthCookies = (res) => {
 export const protectApi = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const cookieToken = req.cookies?.[ACCESS_TOKEN_COOKIE] || null;
+    const token = bearerToken || cookieToken;
 
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     const decoded = verifyAccessToken(token);
-    const auth = await Auth.findById(decoded.sub).select('_id name email role');
+    const user = await User.findById(decoded.sub).select('_id name email role');
 
-    if (!auth) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    req.auth = auth;
+    req.auth = user;
     return next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid or expired token' });
@@ -72,14 +74,14 @@ export const protectDashboard = async (req, res, next) => {
 
   try {
     const decoded = verifyAccessToken(accessToken);
-    const auth = await Auth.findById(decoded.sub).select('_id name email role');
+    const user = await User.findById(decoded.sub).select('_id name email role');
 
-    if (!auth) {
+    if (!user) {
       clearAuthCookies(res);
       return res.redirect('/dashboard/login');
     }
 
-    req.auth = auth;
+    req.auth = user;
     return next();
   } catch (error) {
     const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
@@ -91,27 +93,27 @@ export const protectDashboard = async (req, res, next) => {
 
     try {
       const decodedRefresh = verifyRefreshToken(refreshToken);
-      const auth = await Auth.findById(decodedRefresh.sub).select(
+      const user = await User.findById(decodedRefresh.sub).select(
         '+refreshTokenHash +refreshTokenExpiresAt _id name email role'
       );
 
-      if (!auth || !auth.refreshTokenHash) {
+      if (!user || !user.refreshTokenHash) {
         clearAuthCookies(res);
         return res.redirect('/dashboard/login');
       }
 
       const incomingHash = sha256(refreshToken);
-      const isHashMatch = incomingHash === auth.refreshTokenHash;
+      const isHashMatch = incomingHash === user.refreshTokenHash;
       const isExpired =
-        !auth.refreshTokenExpiresAt || auth.refreshTokenExpiresAt.getTime() < Date.now();
+        !user.refreshTokenExpiresAt || user.refreshTokenExpiresAt.getTime() < Date.now();
 
       if (!isHashMatch || isExpired) {
         clearAuthCookies(res);
         return res.redirect('/dashboard/login');
       }
 
-      await issueTokens(auth, res);
-      req.auth = auth;
+      await issueTokens(user, res);
+      req.auth = user;
       return next();
     } catch (refreshError) {
       clearAuthCookies(res);
@@ -131,26 +133,26 @@ export const redirectIfAuthenticated = async (req, res, next) => {
 
     try {
       const decodedRefresh = verifyRefreshToken(refreshToken);
-      const auth = await Auth.findById(decodedRefresh.sub).select(
+      const user = await User.findById(decodedRefresh.sub).select(
         '+refreshTokenHash +refreshTokenExpiresAt _id name email role'
       );
 
-      if (!auth || !auth.refreshTokenHash) {
+      if (!user || !user.refreshTokenHash) {
         clearAuthCookies(res);
         return next();
       }
 
       const incomingHash = sha256(refreshToken);
-      const isHashMatch = incomingHash === auth.refreshTokenHash;
+      const isHashMatch = incomingHash === user.refreshTokenHash;
       const isExpired =
-        !auth.refreshTokenExpiresAt || auth.refreshTokenExpiresAt.getTime() < Date.now();
+        !user.refreshTokenExpiresAt || user.refreshTokenExpiresAt.getTime() < Date.now();
 
       if (!isHashMatch || isExpired) {
         clearAuthCookies(res);
         return next();
       }
 
-      await issueTokens(auth, res);
+      await issueTokens(user, res);
       return res.redirect('/dashboard');
     } catch (refreshError) {
       clearAuthCookies(res);
@@ -160,9 +162,9 @@ export const redirectIfAuthenticated = async (req, res, next) => {
 
   try {
     const decoded = verifyAccessToken(accessToken);
-    const auth = await Auth.findById(decoded.sub).select('_id name email role');
+    const user = await User.findById(decoded.sub).select('_id name email role');
 
-    if (!auth) {
+    if (!user) {
       clearAuthCookies(res);
       return next();
     }
@@ -176,26 +178,26 @@ export const redirectIfAuthenticated = async (req, res, next) => {
 
     try {
       const decodedRefresh = verifyRefreshToken(refreshToken);
-      const auth = await Auth.findById(decodedRefresh.sub).select(
+      const user = await User.findById(decodedRefresh.sub).select(
         '+refreshTokenHash +refreshTokenExpiresAt _id name email role'
       );
 
-      if (!auth || !auth.refreshTokenHash) {
+      if (!user || !user.refreshTokenHash) {
         clearAuthCookies(res);
         return next();
       }
 
       const incomingHash = sha256(refreshToken);
-      const isHashMatch = incomingHash === auth.refreshTokenHash;
+      const isHashMatch = incomingHash === user.refreshTokenHash;
       const isExpired =
-        !auth.refreshTokenExpiresAt || auth.refreshTokenExpiresAt.getTime() < Date.now();
+        !user.refreshTokenExpiresAt || user.refreshTokenExpiresAt.getTime() < Date.now();
 
       if (!isHashMatch || isExpired) {
         clearAuthCookies(res);
         return next();
       }
 
-      await issueTokens(auth, res);
+      await issueTokens(user, res);
       return res.redirect('/dashboard');
     } catch (refreshError) {
       clearAuthCookies(res);

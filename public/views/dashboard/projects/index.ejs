@@ -1,0 +1,25 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1>Projects</h1>
+    <a class="btn" href="/dashboard/projects/add">Add New Project</a>
+  </div>
+
+  <% if (!projects || projects.length === 0) { %>
+    <p class="empty">No projects found.</p>
+  <% } %>
+
+  <% if (projects && projects.length > 0) { %>
+    <% projects.forEach((project) => { %>
+      <article class="item-row">
+        <h3><%= project.title %></h3>
+        <p class="meta"><%= project.description %></p>
+        <p class="meta">Visible: <%= project.isVisible ? 'Yes' : 'No' %> | Deployed: <%= project.isDeployed ? 'Yes' : 'No' %></p>
+        <a class="btn" href="/dashboard/projects/<%= project._id %>">Edit</a>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
+
+<%- include('../partials/shell-end') %>

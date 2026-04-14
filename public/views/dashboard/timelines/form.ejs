@@ -1,0 +1,139 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1><%= timeline ? 'Edit Timeline' : 'Add Timeline' %></h1>
+    <a class="btn secondary" href="/dashboard/timelines">Back to Timelines</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="status err"><%= error %></p>
+  <% } %>
+
+  <form id="timelineForm">
+    <div class="field">
+      <label for="type">Type</label>
+      <select id="type" name="type">
+        <option value="education" <%= timeline?.type === 'education' ? 'selected' : '' %>>education</option>
+        <option value="experience" <%= !timeline || timeline?.type === 'experience' ? 'selected' : '' %>>experience</option>
+        <option value="project" <%= timeline?.type === 'project' ? 'selected' : '' %>>project</option>
+        <option value="achievement" <%= timeline?.type === 'achievement' ? 'selected' : '' %>>achievement</option>
+        <option value="certification" <%= timeline?.type === 'certification' ? 'selected' : '' %>>certification</option>
+        <option value="other" <%= timeline?.type === 'other' ? 'selected' : '' %>>other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" name="title" value="<%= timeline?.title || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="organization">Organization</label>
+      <input id="organization" name="organization" value="<%= timeline?.organization || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="location">Location</label>
+      <input id="location" name="location" value="<%= timeline?.location || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="startDate">Start Date</label>
+      <input id="startDate" name="startDate" value="<%= timeline?.startDate || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="endDate">End Date</label>
+      <input id="endDate" name="endDate" value="<%= timeline?.endDate || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="isCurrent">Is Current</label>
+      <select id="isCurrent" name="isCurrent">
+        <option value="true" <%= timeline?.isCurrent ? 'selected' : '' %>>true</option>
+        <option value="false" <%= timeline && !timeline.isCurrent ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" required><%= timeline?.description || '' %></textarea>
+    </div>
+
+    <div class="field">
+      <label for="relatedSkills">Related Skills (comma separated Skill ObjectId values)</label>
+      <input id="relatedSkills" name="relatedSkills" value="<%= timeline?.relatedSkills?.length ? timeline.relatedSkills.join(',') : '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="credentialUrl">Credential URL</label>
+      <input id="credentialUrl" name="credentialUrl" value="<%= timeline?.credentialUrl || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="isVisible">Is Visible</label>
+      <select id="isVisible" name="isVisible">
+        <option value="true" <%= timeline?.isVisible !== false ? 'selected' : '' %>>true</option>
+        <option value="false" <%= timeline?.isVisible === false ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <button class="btn" type="submit"><%= timeline ? 'Update Timeline' : 'Create Timeline' %></button>
+  </form>
+  <p id="status" class="status"></p>
+</section>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('timelineForm');
+  const timelineId = '<%= timeline?._id || '' %>';
+
+  const boolValue = (value) => value === 'true';
+
+  const payloadFromForm = () => {
+    const fd = new FormData(form);
+    const body = Object.fromEntries(fd.entries());
+    body.isCurrent = boolValue(body.isCurrent);
+    body.isVisible = boolValue(body.isVisible);
+    body.relatedSkills = body.relatedSkills
+      ? body.relatedSkills.split(',').map((item) => item.trim()).filter(Boolean)
+      : [];
+    return body;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving...';
+
+    const method = timelineId ? 'PUT' : 'POST';
+    const url = timelineId ? `/api/timeline/${timelineId}` : '/api/timeline';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadFromForm()),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      statusEl.className = 'status ok';
+      statusEl.textContent = timelineId ? 'Timeline updated successfully' : 'Timeline created successfully';
+
+      if (!timelineId) {
+        window.location.href = '/timeline';
+      }
+    } catch (error) {
+      statusEl.className = 'status err';
+      statusEl.textContent = error.message;
+    }
+  });
+</script>
+
+<%- include('../partials/shell-end') %>

@@ -1,0 +1,25 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1>Skills</h1>
+    <a class="btn" href="/dashboard/skills/add">Add New Skill</a>
+  </div>
+
+  <% if (!skills || skills.length === 0) { %>
+    <p class="empty">No skills found.</p>
+  <% } %>
+
+  <% if (skills && skills.length > 0) { %>
+    <% skills.forEach((skill) => { %>
+      <article class="item-row">
+        <h3><%= skill.name || 'Unnamed' %></h3>
+        <p class="meta">Category: <%= skill.category %> | Proficiency: <%= skill.proficiency %> | Years: <%= skill.yearsOfExperience %></p>
+        <p class="meta">Visible: <%= skill.isVisible ? 'Yes' : 'No' %></p>
+        <a class="btn" href="/dashboard/skills/<%= skill._id %>">Edit</a>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
+
+<%- include('../partials/shell-end') %>

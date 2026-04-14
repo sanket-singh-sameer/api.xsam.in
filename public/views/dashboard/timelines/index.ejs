@@ -1,0 +1,25 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1>Timelines</h1>
+    <a class="btn" href="/dashboard/timelines/add">Add New Timeline</a>
+  </div>
+
+  <% if (!timelines || timelines.length === 0) { %>
+    <p class="empty">No timeline entries found.</p>
+  <% } %>
+
+  <% if (timelines && timelines.length > 0) { %>
+    <% timelines.forEach((timeline) => { %>
+      <article class="item-row">
+        <h3><%= timeline.title %></h3>
+        <p class="meta">Type: <%= timeline.type %> | Org: <%= timeline.organization %></p>
+        <p class="meta"><%= timeline.startDate %> - <%= timeline.endDate || 'Present' %> | Visible: <%= timeline.isVisible ? 'Yes' : 'No' %></p>
+        <a class="btn" href="/dashboard/timelines/<%= timeline._id %>">Edit</a>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
+
+<%- include('../partials/shell-end') %>

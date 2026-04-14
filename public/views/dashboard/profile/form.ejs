@@ -1,0 +1,85 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1>Edit Profile</h1>
+  </div>
+
+  <form id="profileForm">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="<%= profile?.name || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" value="<%= profile?.email || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="tagline">Tagline</label>
+      <input id="tagline" name="tagline" value="<%= profile?.tagline || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio"><%= profile?.bio || '' %></textarea>
+    </div>
+
+    <div class="field">
+      <label for="avatar">Avatar URL</label>
+      <input id="avatar" name="avatar" value="<%= profile?.avatar || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="location">Location</label>
+      <input id="location" name="location" value="<%= profile?.location || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="website">Website</label>
+      <input id="website" name="website" value="<%= profile?.website || '' %>" />
+    </div>
+
+    <button class="btn" type="submit">Update Profile</button>
+  </form>
+  <p id="status" class="status"></p>
+</section>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('profileForm');
+
+  const payloadFromForm = () => {
+    const fd = new FormData(form);
+    return Object.fromEntries(fd.entries());
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving...';
+
+    try {
+      const response = await fetch('/api/user', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadFromForm()),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      statusEl.className = 'status ok';
+      statusEl.textContent = 'Profile updated successfully';
+    } catch (error) {
+      statusEl.className = 'status err';
+      statusEl.textContent = error.message;
+    }
+  });
+</script>
+
+<%- include('../partials/shell-end') %>

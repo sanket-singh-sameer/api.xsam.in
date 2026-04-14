@@ -1,0 +1,90 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+  <div class="top">
+    <h1><%= social ? 'Edit Social' : 'Add Social' %></h1>
+    <a class="btn secondary" href="/dashboard/socials">Back to Socials</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="status err"><%= error %></p>
+  <% } %>
+
+  <form id="socialForm">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" value="<%= social?.name || '' %>" required />
+    </div>
+
+    <div class="field">
+      <label for="profileUrl">Profile URL</label>
+      <input id="profileUrl" name="profileUrl" value="<%= social?.profileUrl || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="iconUrl">Icon URL</label>
+      <input id="iconUrl" name="iconUrl" value="<%= social?.iconUrl || '' %>" />
+    </div>
+
+    <div class="field">
+      <label for="isVisible">Is Visible</label>
+      <select id="isVisible" name="isVisible">
+        <option value="true" <%= social?.isVisible !== false ? 'selected' : '' %>>true</option>
+        <option value="false" <%= social?.isVisible === false ? 'selected' : '' %>>false</option>
+      </select>
+    </div>
+
+    <button class="btn" type="submit"><%= social ? 'Update Social' : 'Create Social' %></button>
+  </form>
+  <p id="status" class="status"></p>
+</section>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const form = document.getElementById('socialForm');
+  const socialId = '<%= social?._id || '' %>';
+
+  const boolValue = (value) => value === 'true';
+
+  const payloadFromForm = () => {
+    const fd = new FormData(form);
+    const body = Object.fromEntries(fd.entries());
+    body.isVisible = boolValue(body.isVisible);
+    return body;
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving...';
+
+    const method = socialId ? 'PUT' : 'POST';
+    const url = socialId ? `/api/social/${socialId}` : '/api/social';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadFromForm()),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      statusEl.className = 'status ok';
+      statusEl.textContent = socialId ? 'Social updated successfully' : 'Social created successfully';
+
+      if (!socialId) {
+        window.location.href = '/socials';
+      }
+    } catch (error) {
+      statusEl.className = 'status err';
+      statusEl.textContent = error.message;
+    }
+  });
+</script>
+
+<%- include('../partials/shell-end') %>

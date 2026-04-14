@@ -239,6 +239,16 @@
 			font-size: 1.1rem;
 		}
 
+		.project-image {
+			width: 100%;
+			height: 170px;
+			object-fit: cover;
+			border-radius: 0.7rem;
+			border: 1px solid var(--border);
+			margin-bottom: 0.7rem;
+			background: #f3eadc;
+		}
+
 		.project p {
 			color: var(--soft-ink);
 			margin-bottom: 0.65rem;
@@ -266,11 +276,21 @@
 		}
 
 		.skill {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.45rem;
 			padding: 0.5rem 0.8rem;
 			border-radius: 0.5rem;
 			background: #fff;
 			border: 1px solid var(--border);
 			font-weight: 500;
+		}
+
+		.skill-icon {
+			width: 18px;
+			height: 18px;
+			object-fit: contain;
+			border-radius: 0.2rem;
 		}
 
 		.contact {
@@ -287,6 +307,99 @@
 			font-weight: 700;
 			text-decoration: none;
 			border-bottom: 2px solid rgba(28, 26, 24, 0.35);
+		}
+
+		.contact-form {
+			margin-top: 1.2rem;
+			display: grid;
+			gap: 0.8rem;
+		}
+
+		.contact-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.8rem;
+		}
+
+		.field {
+			display: flex;
+			flex-direction: column;
+			gap: 0.35rem;
+		}
+
+		.field label {
+			font-size: 0.92rem;
+			font-weight: 700;
+		}
+
+		.field input,
+		.field textarea {
+			width: 100%;
+			font: inherit;
+			color: var(--ink);
+			background: #fff;
+			border: 1px solid #cfbea8;
+			border-radius: 0.6rem;
+			padding: 0.65rem 0.75rem;
+		}
+
+		.field textarea {
+			resize: vertical;
+			min-height: 130px;
+		}
+
+		.field input:focus,
+		.field textarea:focus {
+			outline: 2px solid rgba(15, 143, 127, 0.35);
+			outline-offset: 2px;
+		}
+
+		.form-actions {
+			display: flex;
+			align-items: center;
+			gap: 0.8rem;
+			flex-wrap: wrap;
+		}
+
+		.form-status {
+			font-size: 0.92rem;
+			font-weight: 500;
+			color: var(--soft-ink);
+		}
+
+		.form-status.success {
+			color: #0b6e61;
+		}
+
+		.form-status.error {
+			color: #b93d27;
+		}
+
+		.social-icons {
+			display: flex;
+			gap: 0.6rem;
+			flex-wrap: wrap;
+			margin-top: 1rem;
+			margin-bottom: 0.8rem;
+		}
+
+		.social-link {
+			width: 40px;
+			height: 40px;
+			border-radius: 999px;
+			border: 1px solid #d5c9b7;
+			background: #fff;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+			text-decoration: none;
+		}
+
+		.social-link img {
+			width: 22px;
+			height: 22px;
+			object-fit: contain;
 		}
 
 		footer {
@@ -341,6 +454,10 @@
 			.hero {
 				padding-top: 4.2rem;
 			}
+
+			.contact-grid {
+				grid-template-columns: 1fr;
+			}
 		}
 	</style>
 </head>
@@ -357,7 +474,16 @@
 			{ title: 'Realtime Dashboard', description: 'Lightweight metrics dashboard with real-time updates and auth support.', tech: ['Socket.IO', 'EJS', 'Chart.js'], link: '#' },
 			{ title: 'Ecommerce Backend', description: 'Clean service-layer architecture for products, orders, and payments.', tech: ['REST', 'JWT', 'Stripe'], link: '#' }
 		];
-		const skillItems = (typeof skills !== 'undefined' && Array.isArray(skills)) ? skills : ['JavaScript', 'Node.js', 'Express', 'EJS', 'MongoDB', 'REST APIs', 'Git'];
+		const skillItems = (typeof skills !== 'undefined' && Array.isArray(skills)) ? skills : [
+			{ name: 'JavaScript', icon: null },
+			{ name: 'Node.js', icon: null },
+			{ name: 'Express', icon: null },
+			{ name: 'MongoDB', icon: null },
+			{ name: 'REST APIs', icon: null },
+			{ name: 'Git', icon: null },
+		];
+		const timelineItems = (typeof timelines !== 'undefined' && Array.isArray(timelines)) ? timelines : [];
+		const socialItems = (typeof socials !== 'undefined' && Array.isArray(socials)) ? socials : [];
 	%>
 
 	<nav class="nav">
@@ -366,6 +492,7 @@
 			<ul class="nav-links">
 				<li><a href="#projects">Projects</a></li>
 				<li><a href="#skills">Skills</a></li>
+				<li><a href="#timeline">Timeline</a></li>
 				<li><a href="#contact">Contact</a></li>
 			</ul>
 		</div>
@@ -406,6 +533,9 @@
 				<div class="projects">
 					<% projectItems.forEach((project) => { %>
 						<article class="project">
+							<% if (project.image) { %>
+								<img class="project-image" src="<%= project.image %>" alt="<%= project.title %>" loading="lazy" />
+							<% } %>
 							<h3><%= project.title %></h3>
 							<p><%= project.description %></p>
 							<% if (Array.isArray(project.tech) && project.tech.length) { %>
@@ -430,7 +560,34 @@
 
 				<div class="skills-wrap">
 					<% skillItems.forEach((skill) => { %>
-						<span class="skill"><%= skill %></span>
+						<span class="skill">
+							<% if (skill.icon) { %>
+								<img class="skill-icon" src="<%= skill.icon %>" alt="<%= skill.name %> icon" loading="lazy" />
+							<% } %>
+							<%= skill.name || skill %>
+						</span>
+					<% }) %>
+				</div>
+			</div>
+		</section>
+
+		<section id="timeline">
+			<div class="container">
+				<div class="section-head">
+					<h2>Timeline</h2>
+					<p><%= timelineItems.length %> milestones</p>
+				</div>
+
+				<div class="projects">
+					<% timelineItems.forEach((item) => { %>
+						<article class="project">
+							<h3><%= item.title %></h3>
+							<p><%= item.organization %></p>
+							<div class="tag-list">
+								<span class="tag"><%= item.type %></span>
+								<span class="tag"><%= item.startDate %> - <%= item.endDate || 'Present' %></span>
+							</div>
+						</article>
 					<% }) %>
 				</div>
 			</div>
@@ -444,6 +601,41 @@
 						Need a developer who can handle both clean backend logic and strong UI execution?
 						Reach me at <a href="mailto:<%= emailText %>"><%= emailText %></a>.
 					</p>
+					<% if (socialItems.length > 0) { %>
+						<div class="social-icons" aria-label="Social links">
+							<% socialItems.forEach((social) => { %>
+								<% if (social.iconUrl) { %>
+									<a class="social-link" href="<%= social.profileUrl || '#' %>" target="_blank" rel="noopener noreferrer" title="<%= social.name || 'Social profile' %>">
+										<img src="<%= social.iconUrl %>" alt="<%= social.name || 'Social' %>" loading="lazy" />
+									</a>
+								<% } %>
+							<% }) %>
+						</div>
+					<% } %>
+					<form id="contact-form" class="contact-form" novalidate>
+						<div class="contact-grid">
+							<div class="field">
+								<label for="name">Name</label>
+								<input id="name" name="name" type="text" autocomplete="name" required minlength="2" maxlength="100" />
+							</div>
+							<div class="field">
+								<label for="email">Email</label>
+								<input id="email" name="email" type="email" autocomplete="email" required />
+							</div>
+						</div>
+						<div class="field">
+							<label for="subject">Subject</label>
+							<input id="subject" name="subject" type="text" required minlength="3" maxlength="160" />
+						</div>
+						<div class="field">
+							<label for="message">Message</label>
+							<textarea id="message" name="message" required minlength="10" maxlength="5000"></textarea>
+						</div>
+						<div class="form-actions">
+							<button id="contact-submit" class="btn btn-main" type="submit">Send message</button>
+							<p id="contact-status" class="form-status" role="status" aria-live="polite"></p>
+						</div>
+					</form>
 				</div>
 			</div>
 		</section>
@@ -454,5 +646,61 @@
 			<p>&copy; <%= new Date().getFullYear() %> <%= siteName %>. Built with Node.js and EJS.</p>
 		</div>
 	</footer>
+
+	<script>
+		const contactForm = document.getElementById('contact-form');
+		const contactStatus = document.getElementById('contact-status');
+		const contactSubmitButton = document.getElementById('contact-submit');
+
+		if (contactForm && contactStatus && contactSubmitButton) {
+			contactForm.addEventListener('submit', async (event) => {
+				event.preventDefault();
+
+				if (!contactForm.checkValidity()) {
+					contactStatus.textContent = 'Please fill all required fields correctly.';
+					contactStatus.className = 'form-status error';
+					contactForm.reportValidity();
+					return;
+				}
+
+				const formData = new FormData(contactForm);
+				const payload = {
+					name: String(formData.get('name') || '').trim(),
+					email: String(formData.get('email') || '').trim(),
+					subject: String(formData.get('subject') || '').trim(),
+					message: String(formData.get('message') || '').trim(),
+				};
+
+				contactSubmitButton.disabled = true;
+				contactStatus.textContent = 'Sending...';
+				contactStatus.className = 'form-status';
+
+				try {
+					const response = await fetch('/api/message', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(payload),
+					});
+
+					if (!response.ok) {
+						const responseBody = await response.json().catch(() => ({}));
+						const errorMessage = responseBody.message || 'Could not send your message. Please try again.';
+						throw new Error(errorMessage);
+					}
+
+					contactForm.reset();
+					contactStatus.textContent = 'Message sent successfully. I will get back to you soon.';
+					contactStatus.className = 'form-status success';
+				} catch (error) {
+					contactStatus.textContent = error.message || 'Could not send your message. Please try again.';
+					contactStatus.className = 'form-status error';
+				} finally {
+					contactSubmitButton.disabled = false;
+				}
+			});
+		}
+	</script>
 </body>
 </html>
