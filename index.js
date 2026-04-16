@@ -1,5 +1,5 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
@@ -17,7 +17,7 @@ import timelinesApiRouter from './routes/api/timeline.api.routes.js';
 import messagesApiRouter from './routes/api/message.api.routes.js';
 import socialsApiRouter from './routes/api/social.api.routes.js';
 import { protectDashboard } from './middlewares/auth.middleware.js';
-dotenv.config();
+import driveApiRouter from './routes/api/drive.api.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -138,6 +138,7 @@ app.use('/api/skill', skillsApiRouter);
 app.use('/api/timeline', timelinesApiRouter);
 app.use('/api/message', messagesApiRouter);
 app.use('/api/social', socialsApiRouter);
+app.use('/api/drive', driveApiRouter);
 
 
 app.use('/dashboard', dashboardRouter);
