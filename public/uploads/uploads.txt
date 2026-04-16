@@ -1,0 +1,1 @@
+this file is made just so that uploads folder exists on vm
