@@ -4,12 +4,12 @@ export const getPublicUser = async (req, res) => {
   try {
     const adminUser = await User.findOne({ role: "admin" })
       .sort({ createdAt: 1 })
-      .select("_id name email tagline bio avatar location website role");
+      .select("_id name email tagline bio avatar resumeURL location website role");
 
     const fallbackUser = !adminUser
       ? await User.findOne({})
           .sort({ createdAt: 1 })
-          .select("_id name email tagline bio avatar location website role")
+          .select("_id name email tagline bio avatar resumeURL location website role")
       : null;
 
     const user = adminUser || fallbackUser;
