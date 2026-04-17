@@ -25,14 +25,21 @@ export const oauth2callbackController = async (req, res) => {
 
 export const driveUploadController = async (req, res) => {
   try {
-    let folderID = process.env.YOUR_FOLDER_ID;
-    if (req.body.folderID) {
-      folderID = req.body.folderID;
-    }
+    const nodeEnv = process.env.NODE_ENV;
+    let baseDriveUrl = "https://drive.xsam.in/0:/uploads/";
+
+    let folderID = req.query.folderID || process.env.YOUR_FOLDER_ID;
+    
     console.log("Received file:", req.file);
     const uploadedFile = await drive.files.create({
       requestBody: {
-        name: 'xsamdotin-'+ Date.now() + '-' + Math.round(Math.random() * 1e9) + '-' + req.file.originalname,
+        name:
+          "xsamdotin-" +
+          Date.now() +
+          "-" +
+          Math.round(Math.random() * 1e9) +
+          "-" +
+          req.file.originalname,
         mimeType: req.file.mimetype,
         parents: [folderID],
       },
@@ -42,15 +49,21 @@ export const driveUploadController = async (req, res) => {
       },
     });
     console.log("✅ File uploaded:", uploadedFile.data);
-
+    if (nodeEnv === "development") {
+      baseDriveUrl = "https://drive.xsam.in/1:/api.xsam.in/";
+    } else if (nodeEnv === "production") {
+      baseDriveUrl = "https://drive.xsam.in/0:/uploads/";
+    }
     res.status(200).json({
       message: "File received successfully!",
-      url: `https://drive.xsam.in/1:/api.xsam.in/${uploadedFile.data.name}`,
+      url: `${baseDriveUrl}${uploadedFile.data.name}`,
     });
   } catch (err) {
     console.error("❌ Error:", err.message);
     res.status(500).json({ message: "Error occurred while uploading file." });
   } finally {
+    req.file.buffer = null;
+
     // Clean up the uploaded file from the server
     // if (req.file && req.file.path) {
     //   fs.unlink(req.file.path, (err) => {
@@ -61,6 +74,41 @@ export const driveUploadController = async (req, res) => {
     //     }
     //   });
     // }
-    req.file.buffer = null;
+  }
+};
+
+export const driveListFilesController = async (req, res) => {
+  try {
+    const folderID = req.query.folderID || process.env.YOUR_FOLDER_ID;
+
+    if (!folderID) {
+      return res.status(400).json({
+        message: "Missing folder id. Set YOUR_FOLDER_ID in env or pass ?folderID=...",
+      });
+    }
+
+    const filesResponse = await drive.files.list({
+      q: `'${folderID}' in parents and trashed = false`,
+      fields:
+        "files(id,name,mimeType,size,createdTime,webViewLink,webContentLink),nextPageToken",
+      orderBy: "createdTime desc",
+      pageSize: 100,
+      supportsAllDrives: true,
+      includeItemsFromAllDrives: true,
+    });
+
+    const files = filesResponse.data.files || [];
+
+    return res.status(200).json({
+      folderID,
+      count: files.length,
+      files,
+    });
+  } catch (err) {
+    console.error("❌ Error listing drive files:", err.message);
+    return res.status(500).json({
+      message: "Error occurred while fetching files from Google Drive.",
+      error: err.message,
+    });
   }
 };

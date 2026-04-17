@@ -237,3 +237,12 @@ export const dashboardMessagesPage = async (req, res) => {
     messages,
   });
 };
+
+export const dashboardUploadsPage = async (req, res) => {
+  return res.render('dashboard/uploads/index', {
+    pageTitle: 'Manage Uploads',
+    auth: req.auth,
+    activeMenu: 'uploads',
+    NODE_ENV: process.env.NODE_ENV,
+  });
+};

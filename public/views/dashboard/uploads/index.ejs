@@ -1,0 +1,166 @@
+<%- include('../partials/shell-start') %>
+
+<section class="card">
+	<div class="top">
+		<h1>Uploads</h1>
+		<button id="refreshFilesBtn" type="button" class="btn secondary">Refresh Files</button>
+	</div>
+	<p class="meta">Upload a file to Google Drive and view files from YOUR_FOLDER_ID (or a custom folder id).</p>
+
+	<form id="uploadForm">
+		<div class="grid">
+			<div class="field">
+				<label for="folderID">Folder ID (optional)</label>
+				<input id="folderID" name="folderID" type="text" placeholder="Uses YOUR_FOLDER_ID if empty" />
+			</div>
+			<div class="field">
+				<label for="file">Choose file</label>
+				<input id="file" name="file" type="file" required />
+			</div>
+		</div>
+		<button type="submit" class="btn">Upload To Drive</button>
+		<p id="uploadStatus" class="status"></p>
+	</form>
+</section>
+
+<section class="card">
+	<div class="top">
+		<h1>Drive Files</h1>
+		<small id="folderLabel" class="meta"></small>
+	</div>
+	<div id="filesContainer">
+		<p class="empty">Loading files...</p>
+	</div>
+</section>
+
+<script>
+	const uploadForm = document.getElementById('uploadForm');
+	const uploadStatus = document.getElementById('uploadStatus');
+	const filesContainer = document.getElementById('filesContainer');
+	const folderLabel = document.getElementById('folderLabel');
+	const folderInput = document.getElementById('folderID');
+	const refreshFilesBtn = document.getElementById('refreshFilesBtn');
+
+	function formatBytes(size) {
+		if (!size || Number.isNaN(Number(size))) return '-';
+		const units = ['B', 'KB', 'MB', 'GB'];
+		let value = Number(size);
+		let index = 0;
+		while (value >= 1024 && index < units.length - 1) {
+			value /= 1024;
+			index += 1;
+		}
+		return `${value.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+	}
+
+	function setStatus(element, message, type) {
+		element.textContent = message;
+		element.className = `status ${type || ''}`;
+	}
+
+	async function loadFiles() {
+		const folderID = folderInput.value.trim();
+		const query = folderID ? `?folderID=${encodeURIComponent(folderID)}` : '';
+
+		filesContainer.innerHTML = '<p class="empty">Loading files...</p>';
+
+		try {
+			const response = await fetch(`/api/drive/files${query}`);
+			const data = await response.json();
+            const nodeENV = '<%= NODE_ENV %>';
+
+			if (!response.ok) {
+				throw new Error(data.message || 'Failed to fetch files');
+			}
+
+			folderLabel.textContent = `Folder: ${data.folderID}`;
+
+			if (!data.files || data.files.length === 0) {
+				filesContainer.innerHTML = '<p class="empty">No files found in this folder.</p>';
+				return;
+			}
+
+			const rows = data.files
+				.map((file) => {
+					const created = file.createdTime ? new Date(file.createdTime).toLocaleString() : '-';
+					const viewLink = file.webViewLink || '#';
+
+					let downloadLink = `https://drive.xsam.in/0:/uploads/${file.name}`;
+                    if(nodeENV === 'development') {
+                        downloadLink = `https://drive.xsam.in/1:/api.xsam.in/${file.name}`;
+                    }
+
+					return `
+						<article class="item-row">
+							<h3>${file.name}</h3>
+							<p class="meta">Type: ${file.mimeType || '-'} | Size: ${formatBytes(file.size)} | Created: ${created}</p>
+							<a class="btn secondary" href="${viewLink}" target="_blank" rel="noreferrer">View</a>
+							<a class="btn" href="${downloadLink}" target="_blank" rel="noreferrer">Download</a>
+							<button type="button" class="btn secondary copy-link-btn" data-link="${encodeURIComponent(downloadLink)}">Copy Link</button>
+						</article>
+					`;
+				})
+				.join('');
+
+			filesContainer.innerHTML = rows;
+		} catch (error) {
+			filesContainer.innerHTML = `<p class="status err">${error.message}</p>`;
+		}
+	}
+
+	uploadForm.addEventListener('submit', async (event) => {
+		event.preventDefault();
+
+		const fileInput = document.getElementById('file');
+		if (!fileInput.files || fileInput.files.length === 0) {
+			setStatus(uploadStatus, 'Please select a file to upload.', 'err');
+			return;
+		}
+
+		setStatus(uploadStatus, 'Uploading...', '');
+
+		const formData = new FormData();
+		formData.append('file', fileInput.files[0]);
+
+		const folderID = folderInput.value.trim();
+		const query = folderID ? `?folderID=${encodeURIComponent(folderID)}` : '';
+
+		try {
+			const response = await fetch(`/api/drive/upload${query}`, {
+				method: 'POST',
+				body: formData,
+			});
+
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(data.message || 'Upload failed');
+			}
+
+			setStatus(uploadStatus, 'Upload successful.', 'ok');
+			fileInput.value = '';
+			await loadFiles();
+		} catch (error) {
+			setStatus(uploadStatus, error.message, 'err');
+		}
+	});
+
+	filesContainer.addEventListener('click', async (event) => {
+		const copyBtn = event.target.closest('.copy-link-btn');
+		if (!copyBtn) {
+			return;
+		}
+
+		try {
+			const link = decodeURIComponent(copyBtn.dataset.link || '');
+			await navigator.clipboard.writeText(link);
+			setStatus(uploadStatus, 'Download link copied.', 'ok');
+		} catch (error) {
+			setStatus(uploadStatus, 'Failed to copy link.', 'err');
+		}
+	});
+
+	refreshFilesBtn.addEventListener('click', loadFiles);
+	loadFiles();
+</script>
+
+<%- include('../partials/shell-end') %>

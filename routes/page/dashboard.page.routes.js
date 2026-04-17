@@ -14,6 +14,7 @@ import {
   dashboardSkillEditPage,
   dashboardSkillsPage,
   dashboardSignupPage,
+  dashboardUploadsPage,
   dashboardTimelineAddPage,
   dashboardTimelineEditPage,
   dashboardTimelinesPage,
@@ -42,6 +43,7 @@ dashboardRouter.get('/socials/add', protectDashboard, dashboardSocialAddPage);
 dashboardRouter.get('/socials/:id', protectDashboard, dashboardSocialEditPage);
 dashboardRouter.get('/profile', protectDashboard, dashboardProfilePage);
 dashboardRouter.get('/messages', protectDashboard, dashboardMessagesPage);
+dashboardRouter.get('/uploads', protectDashboard, dashboardUploadsPage);
 dashboardRouter.use('/', redirectIfAuthenticated, (req, res) => {
   return res.redirect('/dashboard/login');
 });
