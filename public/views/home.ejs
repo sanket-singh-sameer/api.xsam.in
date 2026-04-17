@@ -622,6 +622,10 @@
 								<label for="email">Email</label>
 								<input id="email" name="email" type="email" autocomplete="email" required />
 							</div>
+							<div class="field">
+								<label for="phone">Phone</label>
+								<input id="phone" name="phone" type="tel" autocomplete="tel" required maxlength="20" />
+							</div>
 						</div>
 						<div class="field">
 							<label for="subject">Subject</label>
@@ -667,6 +671,7 @@
 				const payload = {
 					name: String(formData.get('name') || '').trim(),
 					email: String(formData.get('email') || '').trim(),
+					phone: String(formData.get('phone') || '').trim(),
 					subject: String(formData.get('subject') || '').trim(),
 					message: String(formData.get('message') || '').trim(),
 				};

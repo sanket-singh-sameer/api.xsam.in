@@ -80,8 +80,9 @@
       <article class="item-row">
         <h3><%= message.subject %></h3>
         <p class="meta"><strong><%= message.name %></strong> - <%= message.email %></p>
+        <p class="meta"><strong>Phone: </strong> <%= message.phone %></p>
+        <p class="meta"><strong>Message: </strong> <%= message.message %></p>
         <p class="meta">Status: <span id="status-label-<%= message._id %>"><%= message.status %></span></p>
-        <p class="meta"><%= message.message %></p>
 
         <div class="message-actions">
           <select id="status-select-<%= message._id %>" class="nice-select">

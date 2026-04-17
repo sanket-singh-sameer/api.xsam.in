@@ -15,6 +15,11 @@ const messageSchema = new mongoose.Schema(
 			trim: true,
 			lowercase: true,
 		},
+		phone: {
+			type: String,
+			trim: true,
+			maxlength: [20, 'Phone number is too long'],
+		},
 		subject: {
 			type: String,
 			required: [true, 'Subject is required'],

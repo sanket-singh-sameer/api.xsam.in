@@ -2,11 +2,11 @@ import Message from "../models/Message.js";
 
 export const writeMessage = async (req, res) => {
   try {
-    const { name, email, subject, message } = req.body;
-    if (!name || !email || !subject || !message) {
+    const { name, email, phone, subject, message } = req.body;
+    if (!name || !email || !phone || !subject || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const newMessage = new Message({ name, email, subject, message });
+    const newMessage = new Message({ name, email, phone, subject, message });
     await newMessage.save();
     res.status(201).json(newMessage);
   } catch (error) {
