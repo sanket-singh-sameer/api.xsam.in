@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-
+import cors from 'cors';
 
 import connectDB from './configs/connectDB.js';
 import transferAuthToUsers from './configs/migrateAuthToUsers.js';
@@ -30,6 +30,12 @@ app.set("views", path.join(__dirname, "public/views"));
 
 app.use(helmet({
   contentSecurityPolicy: false,
+}));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
