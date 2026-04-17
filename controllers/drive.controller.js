@@ -2,6 +2,7 @@ import { getAuthUrl } from "../services/driveAuthConfig.js";
 import { OAuth2Client } from "../services/OAuth2Client.js";
 import { drive } from "../services/driveConfig.js";
 import fs from "fs";
+import { bufferToStream } from "../services/bufferToStream.js";
 
 export const driveAuthController = (req, res) => {
   const authUrl = getAuthUrl();
@@ -31,13 +32,13 @@ export const driveUploadController = async (req, res) => {
     console.log("Received file:", req.file);
     const uploadedFile = await drive.files.create({
       requestBody: {
-        name: req.file.filename,
+        name: 'xsamdotin-'+ Date.now() + '-' + Math.round(Math.random() * 1e9) + '-' + req.file.originalname,
         mimeType: req.file.mimetype,
         parents: [folderID],
       },
       media: {
         mimeType: req.file.mimetype,
-        body: fs.createReadStream(req.file.path),
+        body: bufferToStream(req.file.buffer),
       },
     });
     console.log("✅ File uploaded:", uploadedFile.data);
@@ -51,14 +52,15 @@ export const driveUploadController = async (req, res) => {
     res.status(500).json({ message: "Error occurred while uploading file." });
   } finally {
     // Clean up the uploaded file from the server
-    if (req.file && req.file.path) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) {
-          console.error("Error deleting file:", err);
-        } else {
-          console.log("Temporary file deleted:", req.file.path);
-        }
-      });
-    }
+    // if (req.file && req.file.path) {
+    //   fs.unlink(req.file.path, (err) => {
+    //     if (err) {
+    //       console.error("Error deleting file:", err);
+    //     } else {
+    //       console.log("Temporary file deleted:", req.file.path);
+    //     }
+    //   });
+    // }
+    req.file.buffer = null;
   }
 };
