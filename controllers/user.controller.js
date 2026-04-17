@@ -25,7 +25,7 @@ export const getPublicUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, tagline, bio, avatar, location, website } = req.body;
+    const { name, email, tagline, bio, avatar, resumeURL, location, website } = req.body;
 
     const user = await User.findById(req.auth._id);
     if (!user) {
@@ -37,6 +37,7 @@ export const updateUser = async (req, res) => {
     if (tagline !== undefined) user.tagline = tagline;
     if (bio !== undefined) user.bio = bio;
     if (avatar !== undefined) user.avatar = avatar;
+    if (resumeURL !== undefined) user.resumeURL = resumeURL;
     if (location !== undefined) user.location = location;
     if (website !== undefined) user.website = website;
 
