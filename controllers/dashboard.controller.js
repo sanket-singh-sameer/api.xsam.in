@@ -204,7 +204,7 @@ export const dashboardSocialEditPage = async (req, res) => {
 
 export const dashboardProfilePage = async (req, res) => {
   const profile = await User.findById(req.auth._id).select(
-    '_id name email tagline bio avatar location website role'
+    '_id name email tagline bio avatar resumeURL location website role'
   );
 
   return res.render('dashboard/profile/form', {

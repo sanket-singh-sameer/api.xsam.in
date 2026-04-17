@@ -17,7 +17,12 @@ export const getPublicUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    return res.status(200).json(user);
+    const payload = user.toObject();
+    if (payload.resumeURL !== undefined && payload.resumeUrl === undefined) {
+      payload.resumeUrl = payload.resumeURL;
+    }
+
+    return res.status(200).json(payload);
   } catch (error) {
     return res.status(500).json({ error: "Could not fetch user" });
   }
@@ -25,7 +30,18 @@ export const getPublicUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, tagline, bio, avatar, resumeURL, location, website } = req.body;
+    const {
+      name,
+      email,
+      tagline,
+      bio,
+      avatar,
+      resumeURL,
+      resumeUrl,
+      resume_url,
+      location,
+      website,
+    } = req.body;
 
     const user = await User.findById(req.auth._id);
     if (!user) {
@@ -37,13 +53,19 @@ export const updateUser = async (req, res) => {
     if (tagline !== undefined) user.tagline = tagline;
     if (bio !== undefined) user.bio = bio;
     if (avatar !== undefined) user.avatar = avatar;
-    if (resumeURL !== undefined) user.resumeURL = resumeURL;
+    const normalizedResumeURL = resumeURL ?? resumeUrl ?? resume_url;
+    if (normalizedResumeURL !== undefined) user.resumeURL = normalizedResumeURL;
     if (location !== undefined) user.location = location;
     if (website !== undefined) user.website = website;
 
     await user.save();
 
-    res.status(200).json(user);
+    const payload = user.toObject();
+    if (payload.resumeURL !== undefined && payload.resumeUrl === undefined) {
+      payload.resumeUrl = payload.resumeURL;
+    }
+
+    res.status(200).json(payload);
   } catch (error) {
     res.status(500).json({ error: "Could not update user" });
   }
