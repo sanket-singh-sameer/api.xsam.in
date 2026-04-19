@@ -230,9 +230,9 @@ const bootstrap = async () => {
   try {
     await connectDB();
     await transferAuthToUsers();
-    // await startMailConsumer("mail.#");
-    // await verifySMTPConnection();
-    await startTgMessageConsumer("tg.#");
+
+    // commented this because it was causing issues with RabbitMQ connection with vercel as vercel doesn't support long server polling. Will revisit later.
+    // await startTgMessageConsumer("tg.#");
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
