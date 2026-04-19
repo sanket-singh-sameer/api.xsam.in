@@ -18,6 +18,10 @@ import messagesApiRouter from './routes/api/message.api.routes.js';
 import socialsApiRouter from './routes/api/social.api.routes.js';
 import { protectDashboard } from './middlewares/auth.middleware.js';
 import driveApiRouter from './routes/api/drive.api.routes.js';
+import { connectRabbitMQ } from './services/rabbitMQ/connection.js';
+import { startMailConsumer } from './services/mail/mailConsumer.js';
+import { verifySMTPConnection } from './services/mail/nodemailer.js';
+import { startTgMessageConsumer } from './services/tg/tgConsumer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -226,6 +230,9 @@ const bootstrap = async () => {
   try {
     await connectDB();
     await transferAuthToUsers();
+    // await startMailConsumer("mail.#");
+    // await verifySMTPConnection();
+    await startTgMessageConsumer("tg.#");
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

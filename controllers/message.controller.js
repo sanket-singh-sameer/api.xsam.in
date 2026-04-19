@@ -1,4 +1,5 @@
 import Message from "../models/Message.js";
+import { publishMessage } from "../services/rabbitMQ/publisher.js";
 
 export const writeMessage = async (req, res) => {
   try {
@@ -8,6 +9,7 @@ export const writeMessage = async (req, res) => {
     }
     const newMessage = new Message({ name, email, phone, subject, message });
     await newMessage.save();
+    await publishMessage("tg.message.created", {newMessage});
     res.status(201).json(newMessage);
   } catch (error) {
     res.status(400).json({ message: error.message });
