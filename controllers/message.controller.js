@@ -1,5 +1,6 @@
 import Message from "../models/Message.js";
 import { publishMessage } from "../services/rabbitMQ/publisher.js";
+import { sendToTopic } from "../services/tg/tgMessaging.js";
 
 export const writeMessage = async (req, res) => {
   try {
